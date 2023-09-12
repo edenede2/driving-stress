@@ -59,7 +59,7 @@ def determine_header(txt_file_path):
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
-def construct_dataframe_optimized_v2(txt_file_path, structured_data):
+def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_file_name):
     # Determine the appropriate header based on the 5th row of the txt file
     header_df = determine_header(txt_file_path)
     
@@ -67,13 +67,11 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data):
     file_name = txt_file_path.split('/')[-1]
     if file_name != 'temp.txt':
         participant_number, order = file_name.replace(".txt", "").split('_')
-        participant_number = int(participant_number)
-        order = int(order)
     else:
         # Handle the temporary file case by reading the original file name from the uploaded file
         participant_number, order = original_file_name.replace(".txt", "").split('_')
-        participant_number = int(participant_number)
-        order = int(order)
+    participant_number = int(participant_number)
+    order = int(order)
     
     # Extract scenario from the file
     with open(txt_file_path, 'r', errors='ignore') as f:
@@ -124,12 +122,12 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data):
 
 
 # Process the raw data file and return a sorted dataframe
-def process_raw_file_for_streamlit(txt_file_path):
+def process_raw_file_for_streamlit(txt_file_path, original_file_name):
     # 1. Extract the structured data from the raw file
     structured_data = extract_structured_data_v6(txt_file_path)
     
     # 2 & 3. Determine the correct header and construct the dataframe
-    df = construct_dataframe_optimized_v2(txt_file_path, structured_data)
+    df = construct_dataframe_optimized_v2(txt_file_path, structured_data, original_file_name)
     
     return df
 
@@ -150,7 +148,7 @@ def main():
         
         try:
             # Process the uploaded file
-            df_sorted = process_raw_file_for_streamlit("temp.txt")
+            df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
             
             # Display the processed data
             st.dataframe(df_sorted)
