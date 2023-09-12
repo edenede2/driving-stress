@@ -164,7 +164,7 @@ def main():
             # Offer option to download the sorted data
             if st.button("Download Sorted Data as CSV"):
                 csv = df_sorted.to_csv(index=False)
-                b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+                b64 = base64.b64encode(csv.encode()).decode()  # Ensure this line is correct
                 href = f'<a href="data:file/csv;base64,{b64}" download="sorted_data.csv">Download CSV File</a>'
                 st.markdown(href, unsafe_allow_html=True)
                 
