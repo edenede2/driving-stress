@@ -45,16 +45,17 @@ def determine_header(txt_file_path):
             next(f)
         fifth_line = f.readline().strip()
     
+    base_url = "https://raw.githubusercontent.com/edenede2/driving-stress/headers/"
+    
     # Determine the header file based on the content of the 5th line
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
-        return pd.read_csv("/mnt/data/TestA.csv")
+        return pd.read_csv(base_url + "TestA.csv")
     elif "Senario2\Scenario2.txt" in fifth_line:
-        return pd.read_csv("/mnt/data/TestB.csv")
+        return pd.read_csv(base_url + "TestB.csv")
     elif "Scenario3\Scenario3.txt" in fifth_line:
-        return pd.read_csv("/mnt/data/TestC.csv")
+        return pd.read_csv(base_url + "TestC.csv")
     else:
         raise ValueError("Unrecognized scenario in file.")
-
 
 # Construct and populate the dataframe
 def construct_dataframe_optimized(txt_file_path, structured_data):
