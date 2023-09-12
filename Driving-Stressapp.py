@@ -22,7 +22,7 @@ def extract_structured_data_v6(txt_file_path):
             if start_reading:
                 # Skip the next two lines after "Block #1: output_data,"
                 if skip_count > 0:
-                    skip_count -= 1
+                    skip_count -= 2
                     continue
 
                 # If the line has a reasonable length (indicative of structured data)
