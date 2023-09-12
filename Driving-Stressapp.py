@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+import base64
 
 # Extract structured data from raw file
 def extract_structured_data_v6(txt_file_path):
