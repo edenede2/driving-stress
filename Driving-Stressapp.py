@@ -59,11 +59,7 @@ def determine_header(txt_file_path):
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
-def construct_dataframe_optimized(txt_file_path, structured_data):
-    # Determine the appropriate header based on the 5th row of the txt file
-    header_df = determine_header(txt_file_path)
-    
-    # Extract participant number and order from the file name
+def construct_dataframe_optimized_v2(txt_file_path, structured_data, header_df):
     # Extract participant number and order from the file name
     file_name = txt_file_path.split('/')[-1]
     if file_name != 'temp.txt':
@@ -71,18 +67,16 @@ def construct_dataframe_optimized(txt_file_path, structured_data):
         participant_number = int(participant_number)
         order = int(order)
     else:
-        # Handle the temporary file case
-        participant_number = None
-        order = None
-
+        # Handle the temporary file case by reading the original file name from the uploaded file
+        participant_number, order = original_file_name.replace(".txt", "").split('_')
+        participant_number = int(participant_number)
+        order = int(order)
     
-    
-    # Determine the scenario based on the 5th row of the txt file
+    # Extract scenario from the file
     with open(txt_file_path, 'r', errors='ignore') as f:
         for _ in range(4):  # skip the first 4 lines
             next(f)
         fifth_line = f.readline().strip()
-    
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
         scenario = "A"
     elif "Senario2\Scenario2.txt" in fifth_line:
@@ -92,15 +86,10 @@ def construct_dataframe_optimized(txt_file_path, structured_data):
     else:
         scenario = None
     
-    # Prepare a list to collect row data
+    # Construct the dataframe
     rows = []
-    
-    # Populate the rows list
     for data_row in structured_data:
-        # Split the data row into individual values
         values = data_row.split()
-        
-        # Construct the row data based on the provided instructions
         row_data = {
             'Participant': participant_number,
             'Scenario': scenario,
@@ -114,23 +103,22 @@ def construct_dataframe_optimized(txt_file_path, structured_data):
             'IncRm': values[5],
             'IncXm': values[6],
             'IncXRm': values[7],
-            'IncYm': values[8]
+            'IncYm': values[8],
+            'Col1': values[9],
+            'Col2': values[10],
+            'First RT': None,
+            'First distance': None
         }
-        
-        # Add the remaining values from the structured data to the row
-        for i, col in enumerate(header_df.columns[13:], start=9):
+        for i, col in enumerate(header_df.columns[17:], start=12):
             if i < len(values):
                 row_data[col] = values[i]
             else:
                 row_data[col] = None
-        
-        # Append the row data to the rows list
         rows.append(row_data)
     
-    # Convert the rows list to a dataframe
     df = pd.DataFrame(rows, columns=header_df.columns)
-    
     return df
+
 
 # Process the raw data file and return a sorted dataframe
 def process_raw_file_for_streamlit(txt_file_path):
