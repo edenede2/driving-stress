@@ -126,7 +126,7 @@ def process_raw_file_for_streamlit(txt_file_path):
     structured_data = extract_structured_data_v6(txt_file_path)
     
     # 2 & 3. Determine the correct header and construct the dataframe
-    df = construct_dataframe_optimized(txt_file_path, structured_data)
+    df = construct_dataframe_optimized_v2(txt_file_path, structured_data)
     
     return df
 
