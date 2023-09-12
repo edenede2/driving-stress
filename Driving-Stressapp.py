@@ -63,9 +63,15 @@ def construct_dataframe_optimized(txt_file_path, structured_data):
     header_df = determine_header(txt_file_path)
     
     # Extract participant number and order from the file name
-    file_name = txt_file_path.split('/')[-1]
-    participant_number = int(file_name.split('_')[0])
-    order = int(file_name.split('_')[1])
+    file_name = txt_file_path.split('/')[-1].replace(".txt", "")  # Remove the .txt extension
+    if file_name != 'temp':
+        participant_number = int(file_name.split('_')[0])
+        order = int(file_name.split('_')[1].replace(".txt", ""))  # Ensure the .txt extension is removed
+    else:
+        # Handle the temporary file case
+        participant_number = None
+        order = None
+    
     
     # Determine the scenario based on the 5th row of the txt file
     with open(txt_file_path, 'r', errors='ignore') as f:
