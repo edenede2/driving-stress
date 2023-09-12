@@ -59,7 +59,10 @@ def determine_header(txt_file_path):
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
-def construct_dataframe_optimized_v2(txt_file_path, structured_data, header_df):
+def construct_dataframe_optimized_v2(txt_file_path, structured_data):
+    # Determine the appropriate header based on the 5th row of the txt file
+    header_df = determine_header(txt_file_path)
+    
     # Extract participant number and order from the file name
     file_name = txt_file_path.split('/')[-1]
     if file_name != 'temp.txt':
