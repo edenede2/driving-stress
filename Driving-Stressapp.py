@@ -141,6 +141,9 @@ def main():
     uploaded_file = st.file_uploader("Choose a file", type="txt")
     
     if uploaded_file is not None:
+        # Capture the original file name
+        original_file_name = uploaded_file.name
+        
         # Save the uploaded file to a temporary location
         with open("temp.txt", "wb") as f:
             f.write(uploaded_file.getvalue())
