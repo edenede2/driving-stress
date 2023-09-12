@@ -120,7 +120,7 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
             'First RT': None,
             'First distance': None
         }
-        for i, col in enumerate(header_df.columns[17:], start=13):
+        for i, col in enumerate(header_df.columns[17:], start=11):
             if i < len(values):
                 row_data[col] = values[i]
             else:
