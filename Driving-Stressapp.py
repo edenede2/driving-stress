@@ -107,15 +107,20 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
             'BrakAcce': values[8],
             'TL': values[9],
             'Crashes': values[10],
-            '???':values[11],
-            'VelKPH':values[12],
+            #'???':None,
+            #'VelKPH':values[11],
+            #'YawRate':values[12],
+            #'WheeleOP':values[13],
+            #'ThrOP':values[14],
+            #'BrakOP':values[15],
+            
             #'IncYm': values[8],
             #'Col1': values[9],
             #'Col2': values[10],
             'First RT': None,
             'First distance': None
         }
-        for i, col in enumerate(header_df.columns[17:], start=12):
+        for i, col in enumerate(header_df.columns[17:], start=13):
             if i < len(values):
                 row_data[col] = values[i]
             else:
