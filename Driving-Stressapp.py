@@ -22,7 +22,7 @@ def save_as_xlsx_with_highlight(df, scenario):
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
         # Create an Excel writer object
-    with pd.ExcelWriter("/mnt/data/sorted_data.xlsx", engine='openpyxl') as writer:
+    with pd.ExcelWriter("sorted_data.xlsx", engine='openpyxl') as writer:
         # Write the DataFrame to XLSX
         df.to_excel(writer, index=False, sheet_name='Sheet1')
         
@@ -48,7 +48,7 @@ def save_as_xlsx_with_highlight(df, scenario):
                     event_counter += 1
                     break
                     
-    return "/mnt/data/sorted_data.xlsx"
+    return "sorted_data.xlsx"
 
 
 # Extract structured data from raw file
