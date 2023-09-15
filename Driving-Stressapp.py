@@ -95,7 +95,7 @@ def determine_header(txt_file_path):
             next(f)
         fifth_line = f.readline().strip()
     
-    base_url = "https://raw.githubusercontent.com/edenede2/driving-stress/headers/"
+    base_url = "https://raw.githubusercontent.com/edenede2/driving-stress/main/"
     
     # Determine the header file based on the content of the 5th line
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
