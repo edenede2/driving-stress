@@ -35,10 +35,10 @@ def save_as_xlsx_with_highlight(df, scenario):
         
         # Iterate over the rows to highlight and update the Event column
         for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
-        event_value = worksheet.cell(row=row_idx, column=4).value
-        if event_value:  # If there's an event value, highlight the row
-            for cell in row:
-                cell.fill = highlight_fill
+            event_value = worksheet.cell(row=row_idx, column=4).value
+            if event_value:  # If there's an event value, highlight the row
+                for cell in row:
+                    cell.fill = highlight_fill
                     
     return "sorted_data.xlsx"
 
