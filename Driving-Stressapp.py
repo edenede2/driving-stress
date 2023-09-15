@@ -18,8 +18,10 @@ def save_as_xlsx_with_highlight(df, scenario):
     """
     # Define the fill pattern for highlighting
     highlight_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-
-    # Create an Excel writer object
+    numeric_columns = ['Time', 'Velm', 'Distm', 'Xm', 'IncVm', 'IncRm', 'WheeleAng', 'ThrAcce', 'BrakAcce', 'TL', 'Crashes']
+    for col in numeric_columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
+        # Create an Excel writer object
     with pd.ExcelWriter("/mnt/data/sorted_data.xlsx", engine='openpyxl') as writer:
         # Write the DataFrame to XLSX
         df.to_excel(writer, index=False, sheet_name='Sheet1')
