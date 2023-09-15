@@ -1,6 +1,58 @@
 import streamlit as st
 import pandas as pd
 import re
+import base64
+import xlsxwriter
+import io
+
+SCENARIO_A_HIGHLIGHT = [1592, 2923, 3082, 3500, 3940, 4705, 5053, 4430, 6580]
+SCENARIO_B_HIGHLIGHT = [1032, 1980, 2661, 3250, 4332, 5560, 5845, 5945, 6487, 7850]
+SCENARIO_C_HIGHLIGHT = [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
+
+def get_highlight_values(scenario):
+    if scenario == "A":
+        return SCENARIO_A_HIGHLIGHT
+    elif scenario == "B":
+        return SCENARIO_B_HIGHLIGHT
+    elif scenario == "C":
+        return SCENARIO_C_HIGHLIGHT
+    else:
+        return []
+
+def save_df_as_excel(df):
+    # Create a BytesIO buffer for the Excel file
+    output = io.BytesIO()
+
+    # Create a Pandas Excel writer with xlsxwriter as the engine
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name="Data", index=False)
+
+        # Get the workbook and the worksheet
+        workbook = writer.book
+        worksheet = writer.sheets["Data"]
+
+        # Define a format for the highlighted rows
+        highlight_format = workbook.add_format({'bg_color': '#FFEB9C'})
+
+        # Get the scenario from the dataframe
+        scenario = df["Scenario"].iloc[0]
+        highlight_values = get_highlight_values(scenario)
+
+        # Update the 'Event' column for highlighted rows and apply the format
+        event_count = 1
+        for i, row in df.iterrows():
+            if any(abs(val - row["Distm"]) < 1 for val in highlight_values):
+                worksheet.set_row(i + 1, cell_format=highlight_format)  # +1 to account for header
+                df.at[i, "Event"] = event_count
+                event_count += 1
+
+        # Save the updated dataframe to the Excel writer
+        df.to_excel(writer, sheet_name="Data", index=False, startrow=1, header=False)
+
+    # Seek to the beginning of the stream and return it
+    output.seek(0)
+    return output
+
 
 # Extract structured data from raw file
 def extract_structured_data_v6(txt_file_path):
@@ -120,6 +172,70 @@ def construct_dataframe_optimized(txt_file_path, structured_data):
     df = pd.DataFrame(rows, columns=header_df.columns)
     
     return df
+def analyze_data_changes(df, event_row_index, row_offset):
+    """
+    Analyze changes in values for WheeleAng, ThrAcce, BrakAcce columns
+    with respect to a highlighted (event) row.
+    """
+    # Ensure the selected row index is within dataframe bounds
+    selected_row_index = event_row_index + row_offset
+    if selected_row_index < 0 or selected_row_index >= len(df):
+        return None
+
+    # Extract relevant data
+    event_row = df.iloc[event_row_index]
+    selected_row = df.iloc[selected_row_index]
+
+    # Calculate changes
+    changes = {
+        "WheeleAng": selected_row["WheeleAng"] - event_row["WheeleAng"],
+        "ThrAcce": selected_row["ThrAcce"] - event_row["ThrAcce"],
+        "BrakAcce": selected_row["BrakAcce"] - event_row["BrakAcce"],
+        "Time": selected_row["Time"],
+        "Distm": selected_row["Distm"],
+        "dTime": selected_row["Time"] - event_row["Time"],
+        "dDistm": selected_row["Distm"] - event_row["Distm"]
+    }
+    
+    return changes
+
+def analysis_page():
+    """
+    Streamlit page for analyzing changes in data values with respect to highlighted rows.
+    """
+    st.sidebar.title("Analysis Options")
+    
+    uploaded_excel = st.sidebar.file_uploader("Upload the Excel file", type="xlsx")
+    
+    if uploaded_excel:
+        df = pd.read_excel(uploaded_excel)
+        
+        # Filter rows where Event is not null
+        event_rows = df.dropna(subset=['Event'])
+        
+        # Choose an event to analyze
+        event_choice = st.sidebar.selectbox("Choose an event to analyze", event_rows["Event"].tolist())
+        
+        # Choose the number of rows for offset
+        row_offset = st.sidebar.slider("Select row offset", -100, 100, 0)
+        
+        if st.sidebar.button("Analyze"):
+            event_row_index = df[df["Event"] == event_choice].index[0]
+            analysis_results = analyze_data_changes(df, event_row_index, row_offset)
+            
+            if analysis_results:
+                file_name = uploaded_excel.name.split('.')[0]
+                st.write(f"In file {file_name}, with respect to Event {event_choice}:")
+                st.write(f"- The value of `WheeleAng` changed by {analysis_results['WheeleAng']:.2f} points.")
+                st.write(f"- The value of `ThrAcce` changed by {analysis_results['ThrAcce']:.2f} points.")
+                st.write(f"- The value of `BrakAcce` changed by {analysis_results['BrakAcce']:.2f} points.")
+                st.write(f"At a distance of {analysis_results['Distm']:.2f} meters (d = {analysis_results['dDistm']:.2f} meters) and a time of {analysis_results['Time']:.2f} seconds (d = {analysis_results['dTime']:.2f} seconds).")
+            else:
+                st.write("The selected row offset is out of the data range.")
+        else:
+            st.write("Select an event and row offset, then click 'Analyze' to view the results.")
+
+
 
 # Process the raw data file and return a sorted dataframe
 def process_raw_file_for_streamlit(txt_file_path):
@@ -131,8 +247,17 @@ def process_raw_file_for_streamlit(txt_file_path):
     
     return df
 
-# Streamlit app
-def main():
+def download_link_excel(buffer, filename, text):
+    """
+    Generate a link to download the excel file
+    """
+    b64 = base64.b64encode(buffer.getvalue()).decode()
+    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{filename}">{text}</a>'
+    return href
+
+# Modify the Streamlit app function to integrate the above changes
+
+def streamlit_app_with_excel():
     st.title("Driving Simulator Data Processor :car: :brain: :smile: \n by Eden Eldar")
 
     # Upload file
@@ -150,15 +275,114 @@ def main():
             # Display the processed data
             st.dataframe(df_sorted)
             
-            # Offer option to download the sorted data
-            if st.button("Download Sorted Data as CSV"):
-                csv = df_sorted.to_csv(index=False)
-                b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-                href = f'<a href="data:file/csv;base64,{b64}" download="sorted_data.csv">Download CSV File</a>'
-                st.markdown(href, unsafe_allow_html=True)
+            # Offer option to download the sorted data as Excel
+            if st.button("Download Sorted Data as Excel"):
+                excel_buffer = save_df_as_excel(df_sorted)
+                dl_link = download_link_excel(excel_buffer, "sorted_data.xlsx", "Download Excel File")
+                st.markdown(dl_link, unsafe_allow_html=True)
                 
         except Exception as e:
             st.write("An error occurred:", str(e))
 
+#def main():
+#    st.title("Driving Simulator Data Processor :car: :brain: :smile: \n by Eden Eldar")
+
+#    # Upload file
+#    uploaded_file = st.file_uploader("Choose a file", type="txt")
+    
+#    if uploaded_file is not None:
+ #       # Save the uploaded file to a temporary location
+  #      with open("temp.txt", "wb") as f:
+   #         f.write(uploaded_file.getvalue())
+        
+    #    try:
+     #       # Process the uploaded file
+      #      df_sorted = process_raw_file_for_streamlit("temp.txt")
+            
+       #     # Display the processed data
+        #    st.dataframe(df_sorted)
+            
+         #   # Offer option to download the sorted data
+          #  if st.button("Download Sorted Data as Excel"):
+           #     excel_buffer = save_df_as_excel(df_sorted)
+            #    dl_link = download_link_excel(excel_buffer, "sorted_data.xlsx", "Download Excel File")
+             #   st.markdown(dl_link, unsafe_allow_html=True)
+
+                
+        #except Exception as e:
+         #   st.write("An error occurred:", str(e))
+
+def analyze_data_changes(df, event_row_index, row_offset):
+    """
+    Analyze changes in values for WheeleAng, ThrAcce, BrakAcce columns
+    with respect to a highlighted (event) row.
+    """
+    # Ensure the selected row index is within dataframe bounds
+    selected_row_index = event_row_index + row_offset
+    if selected_row_index < 0 or selected_row_index >= len(df):
+        return None
+
+    # Extract relevant data
+    event_row = df.iloc[event_row_index]
+    selected_row = df.iloc[selected_row_index]
+
+    # Calculate changes
+    changes = {
+        "WheeleAng": selected_row["WheeleAng"] - event_row["WheeleAng"],
+        "ThrAcce": selected_row["ThrAcce"] - event_row["ThrAcce"],
+        "BrakAcce": selected_row["BrakAcce"] - event_row["BrakAcce"],
+        "Time": selected_row["Time"],
+        "Distm": selected_row["Distm"],
+        "dTime": selected_row["Time"] - event_row["Time"],
+        "dDistm": selected_row["Distm"] - event_row["Distm"]
+    }
+    
+    return changes
+
+def analysis_page():
+    """
+    Streamlit page for analyzing changes in data values with respect to highlighted rows.
+    """
+    st.sidebar.title("Analysis Options")
+    
+    uploaded_excel = st.sidebar.file_uploader("Upload the Excel file", type="xlsx")
+    
+    if uploaded_excel:
+        df = pd.read_excel(uploaded_excel)
+        
+        # Filter rows where Event is not null
+        event_rows = df.dropna(subset=['Event'])
+        
+        # Choose an event to analyze
+        event_choice = st.sidebar.selectbox("Choose an event to analyze", event_rows["Event"].tolist())
+        
+        # Choose the number of rows for offset
+        row_offset = st.sidebar.slider("Select row offset", -100, 100, 0)
+        
+        if st.sidebar.button("Analyze"):
+            event_row_index = df[df["Event"] == event_choice].index[0]
+            analysis_results = analyze_data_changes(df, event_row_index, row_offset)
+            
+            if analysis_results:
+                file_name = uploaded_excel.name.split('.')[0]
+                st.write(f"In file {file_name}, with respect to Event {event_choice}:")
+                st.write(f"- The value of `WheeleAng` changed by {analysis_results['WheeleAng']:.2f} points.")
+                st.write(f"- The value of `ThrAcce` changed by {analysis_results['ThrAcce']:.2f} points.")
+                st.write(f"- The value of `BrakAcce` changed by {analysis_results['BrakAcce']:.2f} points.")
+                st.write(f"At a distance of {analysis_results['Distm']:.2f} meters (d = {analysis_results['dDistm']:.2f} meters) and a time of {analysis_results['Time']:.2f} seconds (d = {analysis_results['dTime']:.2f} seconds).")
+            else:
+                st.write("The selected row offset is out of the data range.")
+        else:
+            st.write("Select an event and row offset, then click 'Analyze' to view the results.")
+
+def integrated_streamlit_app():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Choose a Page", ["Data Processing", "Data Analysis"])
+    
+    if page == "Data Processing":
+        streamlit_app_with_excel()
+    elif page == "Data Analysis":
+        analysis_page()
+
 if __name__ == "__main__":
-    main()
+    integrated_streamlit_app()
