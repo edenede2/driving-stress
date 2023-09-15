@@ -12,17 +12,18 @@ HIGHLIGHT_VALUES = {
     'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
 }
 
-def save_as_xlsx_with_highlight(df, scenario):
+def save_as_xlsx_with_highlight_refined(df, scenario):
     """
     Save the DataFrame as an XLSX file and highlight rows based on Distm values and scenario.
     Also, updates the Event column based on highlighted rows.
     """
     # Define the fill pattern for highlighting
     highlight_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    
     numeric_columns = ['Time', 'Velm', 'Distm', 'Xm', 'IncVm', 'IncRm', 'WheeleAng', 'ThrAcce', 'BrakAcce', 'TL', 'Crashes']
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
-        # Create an Excel writer object
+
     with pd.ExcelWriter("sorted_data.xlsx", engine='openpyxl') as writer:
         # Write the DataFrame to XLSX
         df.to_excel(writer, index=False, sheet_name='Sheet1')
@@ -32,13 +33,15 @@ def save_as_xlsx_with_highlight(df, scenario):
         worksheet = writer.sheets['Sheet1']
 
         # Iterate over the rows to highlight rows with an 'Event'
-    for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
-        event_value = worksheet.cell(row=row_idx, column=4).value
-        if event_value:  # If there's an event value, highlight the row
-            for cell in row:
-                cell.fill = highlight_fill
+        for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
+            event_value = worksheet.cell(row=row_idx, column=4).value
+            if event_value:  # If there's an event value, highlight the row
+                for cell in row:
+                    cell.fill = highlight_fill
                     
     return "sorted_data.xlsx"
+
+# "save_as_xlsx_with_highlight_refined"
 
 
 
@@ -98,7 +101,7 @@ def determine_header(txt_file_path):
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
-def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_file_name):
+def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name):
     # Determine the appropriate header based on the 5th row of the txt file
     header_df = determine_header(txt_file_path)
     
@@ -137,7 +140,7 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
             'Event': None,
             'Time': values[0],
             'Velm': values[1],
-            'Distm': values[2],
+            'Distm': float(values[2]),  # Ensure Distm is float type
             'Xm': values[3],
             'IncVm': values[4],
             'IncRm': values[5],
@@ -160,22 +163,11 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
     for highlight_value in HIGHLIGHT_VALUES.get(scenario, []):
         closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
         df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
-    specific_distm_values = {value: idx+1 for idx, value in enumerate(sorted(HIGHLIGHT_VALUES.get(scenario, [])))}
-        df['Event'] = df['Distm'].map(specific_distm_values).fillna(0).astype(int)
-        df['Event'] = df['Event'].replace(0, np.nan)
     
-    return df
-    return df
-
-
-
-# Process the raw data file and return a sorted dataframe
-def process_raw_file_for_streamlit(txt_file_path, original_file_name):
-    # 1. Extract the structured data from the raw file
-    structured_data = extract_structured_data_v6(txt_file_path)
-    
-    # 2 & 3. Determine the correct header and construct the dataframe
-    df = construct_dataframe_optimized_v2(txt_file_path, structured_data, original_file_name)
+    # Rank the events and fill any NaN values with 0
+    df['Event'] = df['Event'].rank(method='first').fillna(0).astype(int)
+    # Replace 0 with NaN to keep the Event column clean
+    df['Event'] = df['Event'].replace(0, np.nan)
     
     return df
 
