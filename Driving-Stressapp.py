@@ -160,10 +160,11 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
     for highlight_value in HIGHLIGHT_VALUES.get(scenario, []):
         closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
         df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
+    specific_distm_values = {value: idx+1 for idx, value in enumerate(sorted(HIGHLIGHT_VALUES.get(scenario, [])))}
+        df['Event'] = df['Distm'].map(specific_distm_values).fillna(0).astype(int)
+        df['Event'] = df['Event'].replace(0, np.nan)
     
-    df['Event'] = df['Event'].rank(method='first').fillna(0).astype(int)
-    df['Event'] = df['Event'].replace(0, np.nan)
-    
+    return df
     return df
 
 
