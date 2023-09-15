@@ -2,6 +2,52 @@ import streamlit as st
 import pandas as pd
 import re
 import base64
+import openpyxl
+from openpyxl.styles import PatternFill
+
+HIGHLIGHT_VALUES = {
+    'A': [1592, 2923, 3082, 3500, 3940, 4705, 5053, 4430, 6580],
+    'B': [1032, 1980, 2661, 3250, 4332, 5560, 5845, 5945, 6487, 7850],
+    'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
+}
+
+def save_as_xlsx_with_highlight(df, scenario):
+    """
+    Save the DataFrame as an XLSX file and highlight rows based on Distm values and scenario.
+    Also, updates the Event column based on highlighted rows.
+    """
+    # Define the fill pattern for highlighting
+    highlight_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+    # Create an Excel writer object
+    with pd.ExcelWriter("/mnt/data/sorted_data.xlsx", engine='openpyxl') as writer:
+        # Write the DataFrame to XLSX
+        df.to_excel(writer, index=False, sheet_name='Sheet1')
+        
+        # Get the workbook and sheet for further editing
+        workbook = writer.book
+        worksheet = writer.sheets['Sheet1']
+
+        # Define an event counter
+        event_counter = 1
+        
+        # Iterate over the rows to highlight and update the Event column
+        for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=1, max_col=3), start=1):
+            distm_value = row[2].value
+            
+            # Check if the distm value is close to any of the highlight values for the scenario
+            for value in HIGHLIGHT_VALUES.get(scenario, []):
+                if abs(distm_value - value) < 1.5:
+                    for cell in row:
+                        cell.fill = highlight_fill
+                    # Update the Event column value
+                    event_cell = worksheet.cell(row=row_idx + 1, column=4)
+                    event_cell.value = event_counter
+                    event_counter += 1
+                    break
+                    
+    return "/mnt/data/sorted_data.xlsx"
+
 
 # Extract structured data from raw file
 def extract_structured_data_v6(txt_file_path):
@@ -145,33 +191,83 @@ def process_raw_file_for_streamlit(txt_file_path, original_file_name):
 def main():
     st.title("Driving Simulator Data Processor :car: :brain: :smile: \n by Eden Eldar")
 
-    # Upload file
+    # Create a sidebar menu for navigation
+    menu = ["Home", "Event Analysis"]
+    choice = st.sidebar.selectbox("Menu", menu)
+
+    # Common file upload for both Home and Event Analysis
     uploaded_file = st.file_uploader("Choose a file", type="txt")
-    
+
     if uploaded_file is not None:
         # Capture the original file name
         original_file_name = uploaded_file.name
-        
+
         # Save the uploaded file to a temporary location
         with open("temp.txt", "wb") as f:
             f.write(uploaded_file.getvalue())
-        
+
         try:
             # Process the uploaded file
             df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
-            
-            # Display the processed data
-            st.dataframe(df_sorted)
-            
-            # Offer option to download the sorted data
-            if st.button("Download Sorted Data as CSV"):
-                csv = df_sorted.to_csv(index=False)
-                b64 = base64.b64encode(csv.encode()).decode()  # Ensure this line is correct
-                href = f'<a href="data:file/csv;base64,{b64}" download="sorted_data.csv">Download CSV File</a>'
-                st.markdown(href, unsafe_allow_html=True)
-                
+
+            if choice == "Home":
+                # Display the processed data
+                st.dataframe(df_sorted)
+
+                # Determine the scenario
+                scenario = df_sorted['Scenario'].iloc[0]
+
+                # Save the processed data as an XLSX file with highlighting
+                xlsx_path = save_as_xlsx_with_highlight(df_sorted, scenario)
+
+                # Offer option to download the sorted data
+                if st.button("Download Sorted Data as XLSX"):
+                    with open(xlsx_path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
+                        href = f'<a href="data:file/xlsx;base64,{b64}" download="sorted_data.xlsx">Download XLSX File</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+
+            elif choice == "Event Analysis":
+                show_event_analysis(df_sorted)
+
         except Exception as e:
             st.write("An error occurred:", str(e))
+
+def calculate_changes(df, event_row_index, offset):
+    """
+    Calculate the changes in WheeleAng, ThrAcce, and BrakAcce for the selected row relative to the event row.
+    """
+    event_row = df.iloc[event_row_index]
+    target_row = df.iloc[event_row_index + offset]
+    
+    changes = {
+        'WheeleAng': target_row['WheeleAng'] - event_row['WheeleAng'],
+        'ThrAcce': target_row['ThrAcce'] - event_row['ThrAcce'],
+        'BrakAcce': target_row['BrakAcce'] - event_row['BrakAcce'],
+        'TimeDifference': target_row['Time'] - event_row['Time'],
+        'DistmDifference': target_row['Distm'] - event_row['Distm']
+    }
+    return changes
+
+def show_event_analysis(df):
+    """
+    Display the analysis for selected event and row offset in the Streamlit app.
+    """
+    # Allow users to select an event
+    event_options = df[df['Event'].notnull()]['Event'].unique().tolist()
+    selected_event = st.sidebar.selectbox("Select an Event", event_options)
+    
+    # Allow users to select the row offset using a slider
+    offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
+    
+    event_row_index = df[df['Event'] == selected_event].index[0]
+    changes = calculate_changes(df, event_row_index, offset)
+    
+    # Display the changes
+    participant = df['Participant'].iloc[0]
+    order = df['Order'].iloc[0]
+    st.write(f"Participant {participant}_{order} changed the value of BrakAcce by {changes['BrakAcce']:.2f} points, ThrAcce by {changes['ThrAcce']:.2f} points, and WheeleAng by {changes['WheeleAng']:.2f} points.")
+    st.write(f"The time difference is {changes['TimeDifference']} seconds and the distance difference is {changes['DistmDifference']} meters.")
 
 if __name__ == "__main__":
     main()
