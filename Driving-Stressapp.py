@@ -20,7 +20,7 @@ def save_as_xlsx_with_highlight(df, scenario):
     highlight_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
     # Create an Excel writer object
-    with pd.ExcelWriter("sorted_data.xlsx", engine='openpyxl') as writer:
+        with pd.ExcelWriter("/mnt/data/sorted_data.xlsx", engine='openpyxl') as writer:
         # Write the DataFrame to XLSX
         df.to_excel(writer, index=False, sheet_name='Sheet1')
         
