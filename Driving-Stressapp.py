@@ -39,6 +39,7 @@ def save_as_xlsx_with_highlight(df, scenario):
             
             # Check if the distm value is close to any of the highlight values for the scenario
             for value in HIGHLIGHT_VALUES.get(scenario, []):
+                st.write(f"Checking distm_value {distm_value} against value {value}")
                 if abs(distm_value - value) < 1.5:
                     for cell in row:
                         cell.fill = highlight_fill
@@ -262,7 +263,11 @@ def show_event_analysis(df):
     # Allow users to select the row offset using a slider
     offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
     
-    event_row_index = df[df['Event'] == selected_event].index[0]
+    matching_rows = df[df['Event'] == selected_event]
+    if matching_rows.empty:
+        st.write(f"No data available for the selected event {selected_event}.")
+        return
+    event_row_index = matching_rows.index[0]
     changes = calculate_changes(df, event_row_index, offset)
     
     # Display the changes
