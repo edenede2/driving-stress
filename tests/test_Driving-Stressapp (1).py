@@ -124,11 +124,11 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
         for _ in range(4):  # skip the first 4 lines
             next(f)
         fifth_line = f.readline().strip()
-    if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
+    if "Scenario1\\Scenario1 - Copy.txt" in fifth_line:
         scenario = "A"
-    elif "Senario2\Scenario2.txt" in fifth_line:
+    elif "Senario2\\Scenario2.txt" in fifth_line:
         scenario = "B"
-    elif "Scenario3\Scenario3.txt" in fifth_line:
+    elif "Scenario3\\Scenario3.txt" in fifth_line:
         scenario = "C"
     else:
         scenario = None
