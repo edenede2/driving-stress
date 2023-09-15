@@ -30,10 +30,7 @@ def save_as_xlsx_with_highlight(df, scenario):
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
 
-        # Define an event counter
-        event_counter = 1
-        
-            # Iterate over the rows to highlight rows with an 'Event'
+        # Iterate over the rows to highlight rows with an 'Event'
     for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
         event_value = worksheet.cell(row=row_idx, column=4).value
         if event_value:  # If there's an event value, highlight the row
@@ -41,6 +38,7 @@ def save_as_xlsx_with_highlight(df, scenario):
                 cell.fill = highlight_fill
                     
     return "sorted_data.xlsx"
+
 
 
 # Extract structured data from raw file
@@ -147,16 +145,6 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
             'BrakAcce': values[8],
             'TL': values[9],
             'Crashes': values[10],
-            #'???':None,
-            #'VelKPH':values[11],
-            #'YawRate':values[12],
-            #'WheeleOP':values[13],
-            #'ThrOP':values[14],
-            #'BrakOP':values[15],
-            
-            #'IncYm': values[8],
-            #'Col1': values[9],
-            #'Col2': values[10],
             'First RT': None,
             'First distance': None
         }
@@ -168,16 +156,15 @@ def construct_dataframe_optimized_v2(txt_file_path, structured_data, original_fi
         rows.append(row_data)
     
     df = pd.DataFrame(rows, columns=header_df.columns)
-    event_counter = 1
-    for index, row in df.iterrows():
-        distm_value = row['Distm']
-        for value in HIGHLIGHT_VALUES.get(scenario, []):
-            if abs(distm_value - value) < 1.5:
-                df.at[index, 'Event'] = event_counter
-                event_counter += 1
-                break
+    for highlight_value in HIGHLIGHT_VALUES.get(scenario, []):
+        closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
+        df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
+    
+    df['Event'] = df['Event'].rank(method='first').fillna(0).astype(int)
+    df['Event'] = df['Event'].replace(0, np.nan)
     
     return df
+
 
 
 # Process the raw data file and return a sorted dataframe
