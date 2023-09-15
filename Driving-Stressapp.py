@@ -34,19 +34,11 @@ def save_as_xlsx_with_highlight(df, scenario):
         event_counter = 1
         
         # Iterate over the rows to highlight and update the Event column
-        for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=1, max_col=3), start=1):
-            distm_value = row[2].value
-            
-            # Check if the distm value is close to any of the highlight values for the scenario
-            for value in HIGHLIGHT_VALUES.get(scenario, []):
-                if abs(distm_value - value) < 1.5:
-                    for cell in row:
-                        cell.fill = highlight_fill
-                    # Update the Event column value
-                    event_cell = worksheet.cell(row=row_idx + 1, column=4)
-                    event_cell.value = event_counter
-                    event_counter += 1
-                    break
+        for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
+        event_value = worksheet.cell(row=row_idx, column=4).value
+        if event_value:  # If there's an event value, highlight the row
+            for cell in row:
+                cell.fill = highlight_fill
                     
     return "sorted_data.xlsx"
 
