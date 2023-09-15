@@ -39,7 +39,6 @@ def save_as_xlsx_with_highlight(df, scenario):
             
             # Check if the distm value is close to any of the highlight values for the scenario
             for value in HIGHLIGHT_VALUES.get(scenario, []):
-                st.write(f"Checking distm_value {distm_value} against value {value}")
                 if abs(distm_value - value) < 1.5:
                     for cell in row:
                         cell.fill = highlight_fill
