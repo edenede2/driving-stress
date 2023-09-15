@@ -95,11 +95,11 @@ def determine_header(txt_file_path):
     base_url = "https://raw.githubusercontent.com/edenede2/driving-stress/headers/"
     
     # Determine the header file based on the content of the 5th line
-    if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
+    if "Scenario1\\Scenario1 - Copy.txt" in fifth_line:
         return pd.read_csv(base_url + "TestA.csv")
-    elif "Senario2\Scenario2.txt" in fifth_line:
+    elif "Senario2\\Scenario2.txt" in fifth_line:
         return pd.read_csv(base_url + "TestB.csv")
-    elif "Scenario3\Scenario3.txt" in fifth_line:
+    elif "Scenario3\\Scenario3.txt" in fifth_line:
         return pd.read_csv(base_url + "TestC.csv")
     else:
         raise ValueError("Unrecognized scenario in file.")
