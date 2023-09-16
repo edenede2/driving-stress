@@ -234,9 +234,43 @@ def calculate_changes(df, event_row_index, offset):
     }
     return changes
 
-def show_event_analysis(df):
+def plot_event_analysis_updated(df, selected_event, parameter, offset):
+    """
+    Plot the change in the selected parameter 100 rows before and after the event.
+    Overlay a scatter plot to highlight the value at the selected offset.
+    """
+    # Find the index of the selected event
+    event_index = df[df['Event'] == selected_event].index[0]
+
+    # Extract a window of 200 rows centered around the event (100 rows before and after)
+    window_start = max(0, event_index - 100)
+    window_end = min(df.shape[0], event_index + 100)
+    df_window = df.iloc[window_start:window_end]
+
+    # Plot the parameter values
+    plt.figure(figsize=(12, 6))
+    plt.plot(df_window.index, df_window[parameter], label=parameter, color='blue')
+    plt.axvline(x=event_index, color='r', linestyle='--', label='Event')
+    
+    # Overlay a scatter plot for the selected offset
+    offset_index = event_index + offset
+    plt.scatter([offset_index], [df_window.loc[offset_index, parameter]], color='green', s=100, zorder=5, label='Selected Offset')
+    
+    plt.title(f'Change in {parameter} around Event {selected_event}')
+    plt.xlabel('Row Index')
+    plt.ylabel(parameter)
+    plt.legend()
+    plt.grid(True)
+
+    # Display the plot in Streamlit
+    st.pyplot(plt.gcf())
+    plt.close()
+
+# We also need to modify the show_event_analysis_updated function to pass the offset to the plot_event_analysis_updated function
+def show_event_analysis_with_scatter(df):
     """
     Display the analysis for selected event and row offset in the Streamlit app.
+    Also allows the user to select a parameter and view the change around the event.
     """
     # Check if there are any events
     event_options = df[df['Event'].notnull()]['Event'].unique().tolist()
@@ -250,6 +284,13 @@ def show_event_analysis(df):
     # Allow users to select the row offset using a slider
     offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
     
+    # Allow users to select a parameter to plot
+    parameters = ['WheeleAng', 'ThrAcce', 'BrakAcce']
+    selected_parameter = st.sidebar.selectbox("Select a Parameter to Analyze", parameters)
+
+    # Plot the selected parameter around the event with the scatter overlay
+    plot_event_analysis_updated(df, selected_event, selected_parameter, offset)
+    
     matching_rows = df[df['Event'] == selected_event]
     event_row_index = matching_rows.index[0]
     changes = calculate_changes(df, event_row_index, offset)
@@ -259,6 +300,7 @@ def show_event_analysis(df):
     order = df['Order'].iloc[0]
     st.write(f"Participant {participant}_{order} changed the value of BrakAcce by {changes['BrakAcce']:.2f} points, ThrAcce by {changes['ThrAcce']:.2f} points, and WheeleAng by {changes['WheeleAng']:.2f} points.")
     st.write(f"The time difference is {changes['TimeDifference']} seconds and the distance difference is {changes['DistmDifference']} meters.")
+
 
 if __name__ == "__main__":
     main()
