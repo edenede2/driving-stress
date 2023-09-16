@@ -295,7 +295,10 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset):
 
     # Plot the parameter values
     plt.figure(figsize=(12, 6))
+    
+    # Plot the actual values of the parameter
     plt.plot(df_window.index, df_window[parameter], label=parameter, color='blue')
+    
     plt.axvline(x=event_index, color='r', linestyle='--', label='Event')
     
     # Overlay a scatter plot for the selected offset
@@ -312,6 +315,7 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset):
     # Display the plot in Streamlit
     st.pyplot(plt.gcf())
     plt.close()
+
 
 # We also need to modify the show_event_analysis_updated function to pass the offset to the plot_event_analysis_updated function
 def show_event_analysis_with_scatter(df):
