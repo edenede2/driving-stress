@@ -219,7 +219,7 @@ def main():
     choice = st.sidebar.selectbox("Menu", menu)
 
     # Common file upload for both Home and Event Analysis
-    uploaded_file = st.file_uploader("Choose a file", type="txt")
+    uploaded_file = st.file_uploader("Choose a file")
 
     if uploaded_file is not None:
         # Capture the original file name
