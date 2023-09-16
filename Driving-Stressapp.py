@@ -92,11 +92,12 @@ def determine_header(txt_file_path):
         fifth_line = f.readline().strip()
 
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
-        return pd.read_csv("/mnt/data/TestA.csv")
+        return pd.read_csv("TestA.csv")
     elif "Senario2\Scenario2.txt" in fifth_line:
-        return pd.read_csv("/mnt/data/TestB.csv")
+        return pd.read_csv("TestB.csv")
     elif "Scenario3\Scenario3.txt" in fifth_line:
-        return pd.read_csv("/mnt/data/TestC.csv")
+        return pd.read_csv("TestC.csv")
+
     else:
         raise ValueError("Unrecognized scenario in file.")
 
