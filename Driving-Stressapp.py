@@ -166,6 +166,50 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
     
     return df
 
+
+def get_event_description(scenario, event_number):
+    """
+    Get the description of the event based on the scenario and event number.
+    """
+    descriptions = {
+        'A': {
+            1: "1. changed traffic light.",
+            2: "2. changed traffic light 2.",
+            3: "3. car integrate from the right side.",
+            4: "4. changed traffic light 3.",
+            5: "5. A pedestrian crosses from the right - without a traffic light.",
+            6: "6. A motorcyclist enters from the right.",
+            7: "7. Traffic jam after a motorcycle and a stuck car.",
+            8: "8. A pedestrian or animal crosses a road from the right and then a yellow vehicle drives slowly in the left lane and when the driver tries to overtake on the right he suddenly turns to the right lane and then goes down to the right to the curb.",
+            9: "9. A car drives backwards and enters from the left"
+        },
+        'B': {
+            1: "1. Pedestrian or animal crossing a road from the left.",
+            2: "2. A motorcyclist enters from the left",
+            3: "3. A light blue vehicle exits from the right and enters both lanes and then returns",
+            4: "4. A vehicle from the separator - enters the lane (next to trucks in an industrial area)",
+            5: "5. A traffic light turns red - at the end of the bridge",
+            6: "6. A traffic light turns red - at the beginning of the city",
+            7: "7. A cyclist disobeys a red light and enters the intersection on the right",
+            8: "8. A pedestrian crosses from the right at a crosswalk without a traffic light",
+            9: "9. Traffic light turns red",
+            10: "10. At the end of the gas station and exit the scenario to the right"
+        },
+        'C': {
+            1: "1. A traffic light turns red just before the bridge that enters the city",
+            2: "2. A garbage truck from which garbage fell is blocking the left lane. A police car is behind and bursts into the right lane as the driver approaches",
+            3: "3. A pedestrian crosses from the left at a crosswalk without a traffic light",
+            4: "4. A bicycle enters the lane on the right",
+            5: "5. A work vehicle leaves the parking lot and enters both lanes",
+            6: "6. A vehicle parked on the right enters and crosses both lanes",
+            7: "7. A traffic light turns red in the middle of the city",
+            8: "8. A pedestrian in a crosswalk enters from the right",
+            9: "9. Last traffic light in town - turns red"
+        }
+    }
+    return descriptions.get(scenario, {}).get(event_number, "Unknown Event")
+
+
 # Streamlit app
 def main():
     st.title("Driving Simulator Data Processor :car: :brain: :smile: \n by Eden Eldar")
@@ -283,6 +327,11 @@ def show_event_analysis_with_scatter(df):
 
     # Allow users to select an event
     selected_event = st.sidebar.selectbox("Select an Event", event_options)
+
+    # Display event description
+    scenario = df['Scenario'].iloc[0]
+    event_description = get_event_description(scenario, selected_event)
+    st.title(event_description)  # Display as title
     
     # Allow users to select the row offset using a slider
     offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
