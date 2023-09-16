@@ -82,42 +82,34 @@ def extract_structured_data_v6(txt_file_path):
 
 # Determine the header for the sorted data based on the 5th row of the txt file
 def determine_header(txt_file_path):
-    # Open the txt file and read the 5th line
     with open(txt_file_path, 'r', errors='ignore') as f:
         for _ in range(4):  # skip the first 4 lines
             next(f)
         fifth_line = f.readline().strip()
-    
-    base_url = "https://raw.githubusercontent.com/edenede2/driving-stress/main/"
-    
-    # Determine the header file based on the content of the 5th line
+
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
-        return pd.read_csv(base_url + "TestA.csv")
+        return pd.read_csv("/mnt/data/TestA.csv")
     elif "Senario2\Scenario2.txt" in fifth_line:
-        return pd.read_csv(base_url + "TestB.csv")
+        return pd.read_csv("/mnt/data/TestB.csv")
     elif "Scenario3\Scenario3.txt" in fifth_line:
-        return pd.read_csv(base_url + "TestC.csv")
+        return pd.read_csv("/mnt/data/TestC.csv")
     else:
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
 def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name):
-    # Determine the appropriate header based on the 5th row of the txt file
     header_df = determine_header(txt_file_path)
     
-    # Extract participant number and order from the file name
     file_name = txt_file_path.split('/')[-1]
     if file_name != 'temp.txt':
         participant_number, order = file_name.replace(".txt", "").split('_')
     else:
-        # Handle the temporary file case by reading the original file name from the uploaded file
         participant_number, order = original_file_name.replace(".txt", "").split('_')
     participant_number = int(participant_number)
     order = int(order)
     
-    # Extract scenario from the file
     with open(txt_file_path, 'r', errors='ignore') as f:
-        for _ in range(4):  # skip the first 4 lines
+        for _ in range(4):
             next(f)
         fifth_line = f.readline().strip()
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
@@ -129,7 +121,6 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
     else:
         scenario = None
     
-    # Construct the dataframe
     rows = []
     for data_row in structured_data:
         values = data_row.split()
@@ -140,12 +131,12 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
             'Event': None,
             'Time': values[0],
             'Velm': values[1],
-            'Distm': float(values[2]),  # Ensure Distm is float type
+            'Distm': float(values[2]),
             'Xm': values[3],
             'IncVm': values[4],
             'IncRm': values[5],
             'WheeleAng': values[6],
-            'ThrAcce': values [7],
+            'ThrAcce': values[7],
             'BrakAcce': values[8],
             'TL': values[9],
             'Crashes': values[10],
@@ -164,9 +155,7 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
         closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
         df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
     
-    # Rank the events and fill any NaN values with 0
     df['Event'] = df['Event'].rank(method='first').fillna(0).astype(int)
-    # Replace 0 with NaN to keep the Event column clean
     df['Event'] = df['Event'].replace(0, np.nan)
     
     return df
