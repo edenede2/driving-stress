@@ -218,12 +218,19 @@ def calculate_changes(df, event_row_index, offset):
     event_row = df.iloc[event_row_index]
     target_row = df.iloc[event_row_index + offset]
     
+    # Ensure the values are numeric before performing the subtraction
+    def safe_subtract(val1, val2):
+        try:
+            return float(val1) - float(val2)
+        except ValueError:
+            return None  # or 0, or however you want to handle this case
+    
     changes = {
-        'WheeleAng': target_row['WheeleAng'] - event_row['WheeleAng'],
-        'ThrAcce': target_row['ThrAcce'] - event_row['ThrAcce'],
-        'BrakAcce': target_row['BrakAcce'] - event_row['BrakAcce'],
-        'TimeDifference': target_row['Time'] - event_row['Time'],
-        'DistmDifference': target_row['Distm'] - event_row['Distm']
+        'WheeleAng': safe_subtract(target_row['WheeleAng'], event_row['WheeleAng']),
+        'ThrAcce': safe_subtract(target_row['ThrAcce'], event_row['ThrAcce']),
+        'BrakAcce': safe_subtract(target_row['BrakAcce'], event_row['BrakAcce']),
+        'TimeDifference': safe_subtract(target_row['Time'], event_row['Time']),
+        'DistmDifference': safe_subtract(target_row['Distm'], event_row['Distm'])
     }
     return changes
 
