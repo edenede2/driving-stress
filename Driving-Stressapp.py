@@ -11,6 +11,10 @@ HIGHLIGHT_VALUES = {
     'B': [1032, 1980, 2661, 3250, 4332, 5560, 5845, 5945, 6487, 7850],
     'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
 }
+def process_raw_file_for_streamlit(txt_file_path, original_file_name):
+    structured_data = extract_structured_data_v6(txt_file_path)
+    df_sorted = construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name)
+    return df_sorted
 
 def save_as_xlsx_with_highlight_refined(df, scenario):
     """
@@ -191,7 +195,7 @@ def main():
                 scenario = df_sorted['Scenario'].iloc[0]
 
                 # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight(df_sorted, scenario)
+                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario)
 
                 # Offer option to download the sorted data
                 if st.button("Download Sorted Data as XLSX"):
@@ -226,17 +230,19 @@ def show_event_analysis(df):
     """
     Display the analysis for selected event and row offset in the Streamlit app.
     """
-    # Allow users to select an event
+    # Check if there are any events
     event_options = df[df['Event'].notnull()]['Event'].unique().tolist()
+    if not event_options:
+        st.write("No events found in the data.")
+        return
+
+    # Allow users to select an event
     selected_event = st.sidebar.selectbox("Select an Event", event_options)
     
     # Allow users to select the row offset using a slider
     offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
     
     matching_rows = df[df['Event'] == selected_event]
-    if matching_rows.empty:
-        st.write(f"No data available for the selected event {selected_event}.")
-        return
     event_row_index = matching_rows.index[0]
     changes = calculate_changes(df, event_row_index, offset)
     
