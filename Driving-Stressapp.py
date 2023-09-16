@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import base64
 import numpy as np
+import matplotlib as plt
 import openpyxl
 from openpyxl.styles import PatternFill
 
