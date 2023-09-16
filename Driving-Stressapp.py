@@ -206,7 +206,8 @@ def main():
                         st.markdown(href, unsafe_allow_html=True)
 
             elif choice == "Event Analysis":
-                show_event_analysis(df_sorted)
+                show_event_analysis_with_scatter(df_sorted)
+
 
         except Exception as e:
             st.write("An error occurred:", str(e))
