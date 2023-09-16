@@ -256,7 +256,8 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset):
     
     # Overlay a scatter plot for the selected offset
     offset_index = event_index + offset
-    plt.scatter([offset_index], [df_window.loc[offset_index, parameter].to_numpy()], color='green', s=100, zorder=5, label='Selected Offset')
+    value_at_offset = df_window.at[offset_index, parameter]
+    plt.scatter(offset_index, value_at_offset, color='green', s=100, zorder=5, label='Selected Offset')
     
     plt.title(f'Change in {parameter} around Event {selected_event}')
     plt.xlabel('Row Index')
