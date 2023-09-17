@@ -400,12 +400,21 @@ def show_event_analysis_with_scatter(df):
     # Allow users to select the row offset using a slider
     offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
     
-    # Plotting all the parameters for the selected event
-    for parameter in ['WheeleAng', 'ThrAcce', 'BrakAcce']:
-        plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range)
+    # Checkboxes to select which graphs to display
+    show_wheeleang = st.sidebar.checkbox("Show WheeleAng Graph", True)
+    show_thracce = st.sidebar.checkbox("Show ThrAcce Graph", True)
+    show_brakacce = st.sidebar.checkbox("Show BrakAcce Graph", True)
+    show_velkph = st.sidebar.checkbox("Show VelKPH Graph", True)
     
-    # Plotting the VelKPH graph
-    plot_speed_analysis(df, selected_event, pre_event_range, post_event_range)
+    # Plotting the selected graphs
+    if show_wheeleang:
+        plot_event_analysis_updated(df, selected_event, 'WheeleAng', offset, pre_event_range, post_event_range)
+    if show_thracce:
+        plot_event_analysis_updated(df, selected_event, 'ThrAcce', offset, pre_event_range, post_event_range)
+    if show_brakacce:
+        plot_event_analysis_updated(df, selected_event, 'BrakAcce', offset, pre_event_range, post_event_range)
+    if show_velkph:
+        plot_speed_analysis(df, selected_event, pre_event_range, post_event_range)
 
     matching_rows = df[df['Event'] == selected_event]
     event_row_index = matching_rows.index[0]
