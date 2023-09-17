@@ -301,6 +301,7 @@ def calculate_changes(df, event_row_index, offset):
     }
     return changes
 
+
 def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
     Plot the change in the selected parameter 100 rows before and after the event.
@@ -352,21 +353,43 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     st.pyplot(plt.gcf())
     plt.close()
 
+def plot_speed_analysis(df, selected_event, pre_event_range, post_event_range):
+    df['VelKPH'] = pd.to_numeric(df['VelKPH'], errors='coerce')
+    
+    # Find the index of the selected event
+    event_index = df[df['Event'] == selected_event].index[0]
+
+    # Extract a window of rows around the event based on the pre-event and post-event range
+    window_start = max(0, event_index - pre_event_range)
+    window_end = min(df.shape[0], event_index + post_event_range)
+    df_window = df.iloc[window_start:window_end]
+
+    # Plot VelKPH values
+    plt.figure(figsize=(12, 6))
+    plt.plot(df_window['Distm'], df_window['VelKPH'], color='purple')
+    plt.axvline(x=df_window.loc[event_index, 'Distm'], color='r', linestyle='--', label='Event')
+    plt.title(f'Speed (VelKPH) around Event {selected_event}')
+    plt.xlabel('Distm (Distance)')
+    plt.ylabel('VelKPH')
+    plt.grid(True)
+
+    # Display the plot in Streamlit
+    st.pyplot(plt.gcf())
+    plt.close()
 
 # We also need to modify the show_event_analysis_updated function to pass the offset to the plot_event_analysis_updated function
 def show_event_analysis_with_scatter(df):
     """
     Display the analysis for selected event and row offset in the Streamlit app.
-    Also allows the user to select a parameter and view the change around the event.
     """
     # Check if there are any events
     event_options = df[df['Event'].notnull()]['Event'].unique().tolist()
     if not event_options:
         st.write("No events found in the data.")
         return
+
     pre_event_range = st.sidebar.slider("Select Pre-Event Range", 100, 700, 100, 50)
-    post_event_range = st.sidebar.slider("Select Post-Event Range", 100, 700, 100, 50) # Allow users to select an event
-    # Pass the ranges to the plotting function
+    post_event_range = st.sidebar.slider("Select Post-Event Range", 100, 700, 100, 50)
     selected_event = st.sidebar.selectbox("Select an Event", event_options)
 
     # Display event description
@@ -377,13 +400,13 @@ def show_event_analysis_with_scatter(df):
     # Allow users to select the row offset using a slider
     offset = st.sidebar.slider("Select Row Offset", -100, 100, 0)
     
-    # Allow users to select a parameter to plot
-    parameters = ['WheeleAng', 'ThrAcce', 'BrakAcce']
-    selected_parameter = st.sidebar.selectbox("Select a Parameter to Analyze", parameters)
-
-    # Plot the selected parameter around the event with the scatter overlay
-    plot_event_analysis_updated(df, selected_event, selected_parameter, offset, pre_event_range, post_event_range)
+    # Plotting all the parameters for the selected event
+    for parameter in ['WheeleAng', 'ThrAcce', 'BrakAcce']:
+        plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range)
     
+    # Plotting the VelKPH graph
+    plot_speed_analysis(df, selected_event, pre_event_range, post_event_range)
+
     matching_rows = df[df['Event'] == selected_event]
     event_row_index = matching_rows.index[0]
     changes = calculate_changes(df, event_row_index, offset)
@@ -393,7 +416,6 @@ def show_event_analysis_with_scatter(df):
     order = df['Order'].iloc[0]
     st.write(f"Participant {participant}_{order} changed the value of BrakAcce by {changes['BrakAcce']:.2f} points, ThrAcce by {changes['ThrAcce']:.2f} points, and WheeleAng by {changes['WheeleAng']:.2f} points.")
     st.write(f"The time difference is {changes['TimeDifference']} seconds and the distance difference is {changes['DistmDifference']} meters.")
-
 
 if __name__ == "__main__":
     main()
