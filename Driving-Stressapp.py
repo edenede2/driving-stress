@@ -324,6 +324,7 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
         changes = df_window[parameter].diff().abs() > 0.14
         colors = ['red' if change else 'blue' for change in changes]
         plt.scatter(df_window['Distm'], df_window[parameter], c=colors, label=parameter)
+        plt.plot(df_window['Distm'], df_window[parameter], label=parameter, color='blue')
     else:
         plt.plot(df_window['Distm'], df_window[parameter], label=parameter, color='blue')
     
