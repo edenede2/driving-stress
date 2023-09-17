@@ -239,25 +239,22 @@ def main():
                 st.subheader("Edit Event Highlight Values")
                 scenario = df_sorted['Scenario'].iloc[0]
                 current_values = HIGHLIGHT_VALUES.get(scenario, [])
-    
-                # Store the modified values in a session state
-                if 'modified_values' not in st.session_state:
-                    st.session_state.modified_values = current_values.copy()
-    
-                # Define the options for the multiselect
-                options = list(range(0, 8000, 100))
-
-                # Filter the session_state modified values to only contain those present in options
-                filtered_defaults = [value for value in st.session_state.modified_values if value in options]
-
-                # Use the filtered defaults for the multiselect
-                new_values = st.multiselect("Distm values for highlighting", options, default=filtered_defaults)
+                
+                # Display a text box for each event
+                modified_values = []
+                for i, value in enumerate(current_values):
+                    new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
+                    try:
+                        modified_values.append(float(new_value))
+                    except ValueError:
+                        st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
+                
+                # Update HIGHLIGHT_VALUES when the button is pressed
                 if st.button("Accept Changes"):
-                    st.session_state.modified_values = new_values
-                    HIGHLIGHT_VALUES[scenario] = new_values
-                    # Re-process the uploaded file to reflect changes
+                    HIGHLIGHT_VALUES[scenario] = modified_values
                     df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
-                    st.dataframe(df_sorted)                # Determine the scenario
+                    st.dataframe(df_sorted)
+
                 scenario = df_sorted['Scenario'].iloc[0]
 
                 # Save the processed data as an XLSX file with highlighting
@@ -272,7 +269,6 @@ def main():
 
             elif choice == "Event Analysis":
                 show_event_analysis_with_scatter(df_sorted)
-
 
         except Exception as e:
             st.write("An error occurred:", str(e))
