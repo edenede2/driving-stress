@@ -236,8 +236,21 @@ def main():
             if choice == "Home":
                 # Display the processed data
                 st.dataframe(df_sorted)
-
-                # Determine the scenario
+                st.subheader("Edit Event Highlight Values")
+                scenario = df_sorted['Scenario'].iloc[0]
+                current_values = HIGHLIGHT_VALUES.get(scenario, [])
+    
+                # Store the modified values in a session state
+                if 'modified_values' not in st.session_state:
+                    st.session_state.modified_values = current_values.copy()
+    
+                new_values = st.multiselect("Distm values for highlighting", range(0, 8000, 100), default=st.session_state.modified_values)
+                if st.button("Accept Changes"):
+                    st.session_state.modified_values = new_values
+                    HIGHLIGHT_VALUES[scenario] = new_values
+                    # Re-process the uploaded file to reflect changes
+                    df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+                    st.dataframe(df_sorted)                # Determine the scenario
                 scenario = df_sorted['Scenario'].iloc[0]
 
                 # Save the processed data as an XLSX file with highlighting
@@ -280,7 +293,7 @@ def calculate_changes(df, event_row_index, offset):
     }
     return changes
 
-def plot_event_analysis_updated(df, selected_event, parameter, offset):
+def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
     Plot the change in the selected parameter 100 rows before and after the event.
     Overlay a scatter plot to highlight the value at the selected offset.
@@ -289,8 +302,8 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset):
     event_index = df[df['Event'] == selected_event].index[0]
 
     # Extract a window of 200 rows centered around the event (100 rows before and after)
-    window_start = max(0, event_index - 100)
-    window_end = min(df.shape[0], event_index + 100)
+    window_start = max(0, event_index - pre_event_range)
+    window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
     # Plot the parameter values
@@ -328,8 +341,9 @@ def show_event_analysis_with_scatter(df):
     if not event_options:
         st.write("No events found in the data.")
         return
-
-    # Allow users to select an event
+    pre_event_range = st.sidebar.slider("Select Pre-Event Range", 100, 700, 100, 50)
+    post_event_range = st.sidebar.slider("Select Post-Event Range", 100, 700, 100, 50) # Allow users to select an event
+    # Pass the ranges to the plotting function
     selected_event = st.sidebar.selectbox("Select an Event", event_options)
 
     # Display event description
@@ -345,7 +359,7 @@ def show_event_analysis_with_scatter(df):
     selected_parameter = st.sidebar.selectbox("Select a Parameter to Analyze", parameters)
 
     # Plot the selected parameter around the event with the scatter overlay
-    plot_event_analysis_updated(df, selected_event, selected_parameter, offset)
+    plot_event_analysis_updated(df, selected_event, selected_parameter, offset, pre_event_range, post_event_range)
     
     matching_rows = df[df['Event'] == selected_event]
     event_row_index = matching_rows.index[0]
