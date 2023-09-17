@@ -244,7 +244,14 @@ def main():
                 if 'modified_values' not in st.session_state:
                     st.session_state.modified_values = current_values.copy()
     
-                new_values = st.multiselect("Distm values for highlighting", range(0, 8000, 100), default=st.session_state.modified_values)
+                # Define the options for the multiselect
+                options = list(range(0, 8000, 100))
+
+                # Filter the session_state modified values to only contain those present in options
+                filtered_defaults = [value for value in st.session_state.modified_values if value in options]
+
+                # Use the filtered defaults for the multiselect
+                new_values = st.multiselect("Distm values for highlighting", options, default=filtered_defaults)
                 if st.button("Accept Changes"):
                     st.session_state.modified_values = new_values
                     HIGHLIGHT_VALUES[scenario] = new_values
