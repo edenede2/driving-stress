@@ -157,6 +157,7 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
         rows.append(row_data)
     
     df = pd.DataFrame(rows, columns=header_df.columns)
+    df['Distm'] = pd.to_numeric(df['Distm'], errors='coerce')
     for highlight_value in HIGHLIGHT_VALUES.get(scenario, []):
         closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
         df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
@@ -277,6 +278,10 @@ def calculate_changes(df, event_row_index, offset):
     """
     Calculate the changes in WheeleAng, ThrAcce, and BrakAcce for the selected row relative to the event row.
     """
+    df['WheeleAng'] = pd.to_numeric(df['WheeleAng'], errors='coerce')
+    df['ThrAcce'] = pd.to_numeric(df['ThrAcce'], errors='coerce')
+    df['BrakAcce'] = pd.to_numeric(df['BrakAcce'], errors='coerce')
+    df['Time'] = pd.to_numeric(df['Time'], errors='coerce')
     event_row = df.iloc[event_row_index]
     target_row = df.iloc[event_row_index + offset]
     
@@ -301,6 +306,7 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     Plot the change in the selected parameter 100 rows before and after the event.
     Overlay a scatter plot to highlight the value at the selected offset.
     """
+    df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
     # Find the index of the selected event
     event_index = df[df['Event'] == selected_event].index[0]
 
