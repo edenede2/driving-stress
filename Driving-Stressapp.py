@@ -94,7 +94,7 @@ def determine_header(txt_file_path):
 
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line:
         return pd.read_csv("TestA.csv")
-    elif "Senario2\Scenario2.txt" in fifth_line:
+    elif "Senario2\Scenario2.txt" or "Senario2\Scenario2.evt" in fifth_line:
         return pd.read_csv("TestB.csv")
     elif "Scenario3\Scenario3.txt" in fifth_line:
         return pd.read_csv("TestC.csv")
