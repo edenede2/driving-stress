@@ -221,69 +221,6 @@ def get_event_description(scenario, event_number):
     return descriptions.get(scenario, {}).get(event_number, "Unknown Event")
 
 
-# Streamlit app
-def main():
-    st.title("Driving Simulator Data Processor :car: :brain: :smile: \n by Eden Eldar")
-
-    # Create a sidebar menu for navigation
-    menu = ["Home", "Event Analysis"]
-    choice = st.sidebar.selectbox("Menu", menu)
-
-    # Common file upload for both Home and Event Analysis
-    uploaded_file = st.file_uploader("Choose a file")
-
-    if uploaded_file is not None:
-        # Capture the original file name
-        original_file_name = uploaded_file.name
-
-        # Save the uploaded file to a temporary location
-        with open("temp.txt", "wb") as f:
-            f.write(uploaded_file.getvalue())
-
-        try:
-            # Process the uploaded file
-            df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
-
-            if choice == "Home":
-                # Display the processed data
-                st.dataframe(df_sorted)
-                st.subheader("Edit Event Highlight Values")
-                scenario = df_sorted['Scenario'].iloc[0]
-                current_values = HIGHLIGHT_VALUES.get(scenario, [])
-                
-                # Display a text box for each event
-                modified_values = []
-                for i, value in enumerate(current_values):
-                    new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
-                    try:
-                        modified_values.append(float(new_value))
-                    except ValueError:
-                        st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
-                
-                # Update HIGHLIGHT_VALUES when the button is pressed
-                if st.button("Accept Changes"):
-                    HIGHLIGHT_VALUES[scenario] = modified_values
-                    df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
-                    st.dataframe(df_sorted)
-
-                scenario = df_sorted['Scenario'].iloc[0]
-
-                # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario)
-
-                # Offer option to download the sorted data
-                if st.button("Download Sorted Data as XLSX"):
-                    with open(xlsx_path, "rb") as f:
-                        b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download="sorted_data.xlsx">Download XLSX File</a>'
-                        st.markdown(href, unsafe_allow_html=True)
-
-            elif choice == "Event Analysis":
-                show_event_analysis_with_scatter(df_sorted)
-
-        except Exception as e:
-            st.write("An error occurred:", str(e))
-
 def calculate_changes(df, event_row_index, offset):
     """
     Calculate the changes in WheeleAng, ThrAcce, and BrakAcce for the selected row relative to the event row.
@@ -436,5 +373,68 @@ def show_event_analysis_with_scatter(df):
     st.write(f"Participant {participant}_{order} changed the value of BrakAcce by {changes['BrakAcce']:.2f} points, ThrAcce by {changes['ThrAcce']:.2f} points, and WheeleAng by {changes['WheeleAng']:.2f} points.")
     st.write(f"The time difference is {changes['TimeDifference']} seconds and the distance difference is {changes['DistmDifference']} meters.")
 
+
+# Streamlit app
+def main():
+    st.title("Driving Simulator Data Processor :car: :brain: :smile: \n by Eden Eldar")
+
+    # Create a sidebar menu for navigation
+    menu = ["Home", "Event Analysis"]
+    choice = st.sidebar.selectbox("Menu", menu)
+
+    # Common file upload for both Home and Event Analysis
+    uploaded_file = st.file_uploader("Choose a file")
+
+    if uploaded_file is not None:
+        # Capture the original file name
+        original_file_name = uploaded_file.name
+
+        # Save the uploaded file to a temporary location
+        with open("temp.txt", "wb") as f:
+            f.write(uploaded_file.getvalue())
+
+        try:
+            # Process the uploaded file
+            df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+
+            if choice == "Home":
+                # Display the processed data
+                st.dataframe(df_sorted)
+                st.subheader("Edit Event Highlight Values")
+                scenario = df_sorted['Scenario'].iloc[0]
+                current_values = HIGHLIGHT_VALUES.get(scenario, [])
+                
+                # Display a text box for each event
+                modified_values = []
+                for i, value in enumerate(current_values):
+                    new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
+                    try:
+                        modified_values.append(float(new_value))
+                    except ValueError:
+                        st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
+                
+                # Update HIGHLIGHT_VALUES when the button is pressed
+                if st.button("Accept Changes"):
+                    HIGHLIGHT_VALUES[scenario] = modified_values
+                    df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+                    st.dataframe(df_sorted)
+
+                scenario = df_sorted['Scenario'].iloc[0]
+
+                # Save the processed data as an XLSX file with highlighting
+                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario)
+
+                # Offer option to download the sorted data
+                if st.button("Download Sorted Data as XLSX"):
+                    with open(xlsx_path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
+                        href = f'<a href="data:file/xlsx;base64,{b64}" download="sorted_data.xlsx">Download XLSX File</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+
+            elif choice == "Event Analysis":
+                show_event_analysis_with_scatter(df_sorted)
+
+        except Exception as e:
+            st.write("An error occurred:", str(e))
 if __name__ == "__main__":
     main()
