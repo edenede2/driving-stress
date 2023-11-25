@@ -5,7 +5,7 @@ import base64
 import numpy as np
 import matplotlib.pyplot as plt
 import openpyxl
-from openpyxl.styles import PatternFill
+from openpyxl.styles import PatternFill, Font, Color, Alignment
 
 HIGHLIGHT_VALUES = {
     'A': [1592, 2923, 3082, 3500, 3940, 4705, 5053, 4430, 6580],
@@ -37,6 +37,16 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
 
+        # Formatting header row
+        for cell in worksheet[1]:  # worksheet[1] is the first row (header row)
+            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+            # Add specific labels to certain cells if needed
+            if cell.value == "SomeColumnName":  # Replace with your column name
+                cell.value = "NewLabel"  # Replace with your new label
+        
         # Iterate over the rows to highlight rows with an 'Event'
         for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
             event_value = worksheet.cell(row=row_idx, column=4).value
