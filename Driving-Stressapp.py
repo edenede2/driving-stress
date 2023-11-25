@@ -18,7 +18,7 @@ def process_raw_file_for_streamlit(txt_file_path, original_file_name):
     df_sorted = construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name)
     return df_sorted
 
-def save_as_xlsx_with_highlight_refined(df, scenario):
+def save_as_xlsx_with_highlight_refined(df, scenario, original_file_name):
     """
     Save the DataFrame as an XLSX file and highlight rows based on Distm values and scenario.
     Also, updates the Event column based on highlighted rows.
@@ -493,7 +493,7 @@ def main():
                 scenario = df_sorted['Scenario'].iloc[0]
 
                 # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario)
+                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, original_file_name)
 
                 # Offer option to download the sorted data
                 if st.button("Download Sorted Data as XLSX"):
