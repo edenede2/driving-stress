@@ -100,7 +100,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
                 comment = Comment("First reaction time \n event time - reaction time", "Eden")
                 cell.comment = comment        
             elif cell.value == "First Ditance":
-                comment = Comment("First reaction distance \n event distace - reaction distance")
+                comment = Comment("First reaction distance \n event distace - reaction distance", "Eden")
                 cell.comment = comment
 
 
