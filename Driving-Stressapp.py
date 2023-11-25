@@ -328,43 +328,44 @@ import plotly.express as px
 def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
     Plot the change in the selected parameter around the event using Plotly with both line and scatter plots.
-    Add a condition for the 'BrakAcce' parameter to change the color of the dot to red if the change is 1.4 or more.
-    Add lines to mark the change of traffic lights.
+    Custom hover information is added to show distm, delta distm, time, and delta time.
     """
     df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
-    
+
     # Find the index of the selected event
     event_index = df[df['Event'] == selected_event].index[0]
+    event_distm = df.loc[event_index, 'Distm']
+    event_time = df.loc[event_index, 'Time']
 
     # Extract a window of rows around the event
     window_start = max(0, event_index - pre_event_range)
     window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
-    # Calculate changes between consecutive rows for 'BrakAcce'
-    if parameter == 'BrakAcce':
-        df_window['BrakAcce_change'] = df_window['BrakAcce'].diff().abs()
-        color_conditions = np.where(df_window['BrakAcce_change'] >= 1.4, 'red', 'blue')
-    else:
-        color_conditions = 'blue'  # Default color for other parameters
+    # Calculate changes for 'BrakAcce' if needed and custom hover text
+    hover_text = []
+    for idx, row in df_window.iterrows():
+        delta_distm = event_distm - row['Distm']
+        delta_time = event_time - row['Time']
+        hover_info = f'Distm: {row["Distm"]}<br>Delta Distm: {delta_distm}<br>Time: {row["Time"]}<br>Delta Time: {delta_time}'
+        hover_text.append(hover_info)
 
     # Create Plotly line graph
-    fig = px.line(df_window, x='Distm', y=parameter, hover_data=['Time', 'Distm'])
+    fig = px.line(df_window, x='Distm', y=parameter, hover_name=hover_text)
 
-    # Add scatter plot with conditional coloring
-    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', marker=dict(color=color_conditions))
+    # Add scatter plot with custom hover text
+    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', hovertext=hover_text)
 
-    # Highlight the event line
-    fig.add_vline(x=df_window.loc[event_index, 'Distm'], line_dash="dash", line_color="red")
-
-    # Add a marker for the selected offset
+    # Highlight the event line and add a marker for the selected offset
+    fig.add_vline(x=event_distm, line_dash="dash", line_color="red")
     offset_index = event_index + offset
     fig.add_scatter(x=[df_window.loc[offset_index, 'Distm']], y=[df_window.loc[offset_index, parameter]], mode='markers', marker=dict(color='green', size=10))
 
-    # Mark traffic light changes
+    # Traffic light color mapping and vertical lines for changes
+    tl_color_map = {1: 'green', 2: 'orange', 3: 'red'}
     for idx, row in df_window.iterrows():
         if idx > window_start and df_window.loc[idx, 'TL'] != df_window.loc[idx - 1, 'TL']:
-            tl_color = 'green' if row['TL'] == 1 else 'orange' if row['TL'] == 2 else 'red'
+            tl_color = tl_color_map.get(row['TL'], 'grey')
             fig.add_vline(x=row['Distm'], line_dash="dot", line_color=tl_color)
 
     # Set titles and labels
