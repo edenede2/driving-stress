@@ -320,7 +320,7 @@ def calculate_changes(df, event_row_index, offset):
         'BrakAcce': safe_subtract(target_row['BrakAcce'], event_row['BrakAcce']),
         'TimeDifference': safe_subtract(target_row['Time'], event_row['Time']),
         'DistmDifference': safe_subtract(target_row['Distm'], event_row['Distm'],
-        'DistmDifference': safe_subtract(target_row['TL'], event_row['TL']))
+        'TLDifference': safe_subtract(target_row['TL'], event_row['TL']))
     }
     return changes
 
