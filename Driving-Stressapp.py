@@ -100,7 +100,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
             elif cell.value == "FirstRT":
                 comment = Comment("First reaction time (event time - reaction time)", "Eden")
                 cell.comment = comment        
-            elif cell.value == "First Distance":
+            elif cell.value == "First Ditance":
                 comment = Comment("First reaction distance (event distance - reaction distance)", "Eden")
                 cell.comment = comment
 
@@ -109,7 +109,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
         
         for col_num, column_title in enumerate(worksheet[1], start=1):  # worksheet[1] is the header row
             cell = worksheet.cell(row=1, column=col_num)
-            if column_title.value in red_cells:
+            if column_title.value in red_headers:
                 cell.fill = red_cells
             elif column_title.value in green_headers:
                 cell.fill = green_cells
