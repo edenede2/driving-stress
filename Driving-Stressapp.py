@@ -125,7 +125,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
                 for cell in row:
                     cell.fill = highlight_fill
                     
-    return "sorted_data.xlsx"
+    return f"sorted_{original_file_name}.xlsx"
 
 # "save_as_xlsx_with_highlight_refined"
 
