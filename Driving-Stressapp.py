@@ -114,7 +114,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
             elif column_title.value in blue_headers:
                 cell.fill = blue_cells
             elif column_title.value in purple_headers:
-                cell.fill = purple_cells
+                cell.fill = Purple_cells
 
 
         
