@@ -342,8 +342,13 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     df_window = df.iloc[window_start:window_end]
 
     # Calculate changes for 'BrakAcce' if needed and custom hover text
+    df['Time'] = pd.to_numeric(df['Time'], errors='coerce')
+    df['Distm'] = pd.to_numeric(df['Distm'], errors='coerce')
+    event_distm = df.loc[event_index, 'Distm']
+    event_time = df.loc[event_index, 'Time']
+
     hover_text = []
-    for idx, row in df_window.iterrows():
+    for idx, row in df.iterrows():
         delta_distm = event_distm - row['Distm']
         delta_time = event_time - row['Time']
         hover_info = f'Distm: {row["Distm"]}<br>Delta Distm: {delta_distm}<br>Time: {row["Time"]}<br>Delta Time: {delta_time}'
