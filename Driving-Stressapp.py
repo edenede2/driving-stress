@@ -303,6 +303,7 @@ def calculate_changes(df, event_row_index, offset):
     df['ThrAcce'] = pd.to_numeric(df['ThrAcce'], errors='coerce')
     df['BrakAcce'] = pd.to_numeric(df['BrakAcce'], errors='coerce')
     df['Time'] = pd.to_numeric(df['Time'], errors='coerce')
+    df['TL'] = pd.to_numeric(df['TL'], errors='coerce')
     event_row = df.iloc[event_row_index]
     target_row = df.iloc[event_row_index + offset]
     
@@ -318,12 +319,11 @@ def calculate_changes(df, event_row_index, offset):
         'ThrAcce': safe_subtract(target_row['ThrAcce'], event_row['ThrAcce']),
         'BrakAcce': safe_subtract(target_row['BrakAcce'], event_row['BrakAcce']),
         'TimeDifference': safe_subtract(target_row['Time'], event_row['Time']),
-        'DistmDifference': safe_subtract(target_row['Distm'], event_row['Distm'])
+        'DistmDifference': safe_subtract(target_row['Distm'], event_row['Distm'],
+        'DistmDifference': safe_subtract(target_row['TL'], event_row['TL']))
     }
     return changes
 
-
-import plotly.express as px
 
 def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
