@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Color, Alignment
 from openpyxl.comments import Comment
+import plotly.express as px
 
 HIGHLIGHT_VALUES = {
     'A': [1592, 2923, 3082, 3500, 3940, 4705, 5053, 4430, 6580],
@@ -324,54 +325,33 @@ def calculate_changes(df, event_row_index, offset):
 
 def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
-    Plot the change in the selected parameter 100 rows before and after the event.
-    Overlay a scatter plot to highlight the value at the selected offset.
+    Plot the change in the selected parameter around the event using Plotly.
     """
     df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
+    
     # Find the index of the selected event
     event_index = df[df['Event'] == selected_event].index[0]
 
-    # Extract a window of rows around the event based on the pre-event and post-event range
+    # Extract a window of rows around the event
     window_start = max(0, event_index - pre_event_range)
     window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
-    # Plot the parameter values
-    plt.figure(figsize=(12, 6))
+    # Create Plotly graph
+    fig = px.scatter(df_window, x='Distm', y=parameter, hover_data=['Time', 'Distm'])
     
-    # Plot the actual values of the parameter
-    if parameter == "BrakAcce":
-        # For BrakAcce, check for changes > 0.14 and highlight them
-        changes = df_window[parameter].diff().abs() > 0.14
-        colors = ['red' if change else 'blue' for change in changes]
-        plt.scatter(df_window['Distm'], df_window[parameter], c=colors, label=parameter)
-        plt.plot(df_window['Distm'], df_window[parameter], label=parameter, color='blue')
-    else:
-        plt.plot(df_window['Distm'], df_window[parameter], label=parameter, color='blue')
-    
-    plt.axvline(x=df_window.loc[event_index, 'Distm'], color='r', linestyle='--', label='Event')
-    
-    # Overlay a scatter plot for the selected offset
-    offset_index = event_index + offset
-    value_at_offset = df_window.loc[offset_index, parameter]
-    plt.scatter([df_window.loc[offset_index, 'Distm']], [df_window.loc[offset_index, parameter]], color='green', s=100, zorder=5, label='Selected Offset')
-    
-    # Traffic light color background
-    tl_colors = {0: None, 1: 'green', 2: 'orange', 3: 'red'}
-    for idx, row in df_window.iterrows():
-        color = tl_colors.get(row['TL'])
-        if color:
-            plt.axvspan(row['Distm'], row['Distm'] + df_window['Distm'].diff().median(), facecolor=color, alpha=0.2)
+    # Highlight the event line
+    fig.add_vline(x=df_window.loc[event_index, 'Distm'], line_dash="dash", line_color="red")
 
-    plt.title(f'Change in {parameter} around Event {selected_event}')
-    plt.xlabel('Distm (Distance)')
-    plt.ylabel(parameter)
-    plt.legend()
-    plt.grid(True)
+    # Add a marker for the selected offset
+    offset_index = event_index + offset
+    fig.add_scatter(x=[df_window.loc[offset_index, 'Distm']], y=[df_window.loc[offset_index, parameter]], mode='markers', marker=dict(color='green', size=10))
+
+    # Set titles and labels
+    fig.update_layout(title=f'Change in {parameter} around Event {selected_event}', xaxis_title='Distm (Distance)', yaxis_title=parameter)
 
     # Display the plot in Streamlit
-    st.pyplot(plt.gcf())
-    plt.close()
+    st.plotly_chart(fig)
 
 def plot_speed_analysis(df, selected_event, pre_event_range, post_event_range):
     df['VelKPH'] = pd.to_numeric(df['VelKPH'], errors='coerce')
