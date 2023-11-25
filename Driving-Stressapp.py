@@ -330,6 +330,8 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     Custom hover information is added to show distm, delta distm, time, and delta time.
     """
     df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
+    df['Time'] = pd.to_numeric(df['Time'], errors='coerce')
+    df['Distm'] = pd.to_numeric(df['Distm'], errors='coerce')
 
     # Find the index of the selected event
     event_index = df[df['Event'] == selected_event].index[0]
@@ -341,14 +343,9 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
-    # Calculate changes for 'BrakAcce' if needed and custom hover text
-    df['Time'] = pd.to_numeric(df['Time'], errors='coerce')
-    df['Distm'] = pd.to_numeric(df['Distm'], errors='coerce')
-    event_distm = df.loc[event_index, 'Distm']
-    event_time = df.loc[event_index, 'Time']
-
+    # Calculate custom hover text for the window
     hover_text = []
-    for idx, row in df.iterrows():
+    for idx, row in df_window.iterrows():
         delta_distm = event_distm - row['Distm']
         delta_time = event_time - row['Time']
         hover_info = f'Distm: {row["Distm"]}<br>Delta Distm: {delta_distm}<br>Time: {row["Time"]}<br>Delta Time: {delta_time}'
