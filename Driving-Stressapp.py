@@ -332,6 +332,7 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
     df['Time'] = pd.to_numeric(df['Time'], errors='coerce')
     df['Distm'] = pd.to_numeric(df['Distm'], errors='coerce')
+    df['TL'] = pd.to_numeric(df['TL'], errors='coerce')  # Ensure TL is numeric
 
     # Find the index of the selected event
     event_index = df[df['Event'] == selected_event].index[0]
@@ -343,7 +344,13 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
-    # Calculate custom hover text for the window
+    # Calculate changes for 'BrakAcce' and custom hover text
+    if parameter == 'BrakAcce':
+        df_window['BrakAcce_change'] = df_window['BrakAcce'].diff().abs()
+        marker_colors = np.where(df_window['BrakAcce_change'] >= 1.4, 'red', 'blue')
+    else:
+        marker_colors = 'blue'  # Default color
+
     hover_text = []
     for idx, row in df_window.iterrows():
         delta_distm = event_distm - row['Distm']
@@ -354,19 +361,14 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     # Create Plotly line graph
     fig = px.line(df_window, x='Distm', y=parameter, hover_name=hover_text)
 
-    # Add scatter plot with custom hover text
-    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', hovertext=hover_text)
+    # Add scatter plot with conditional coloring and custom hover text
+    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', marker=dict(color=marker_colors), hovertext=hover_text)
 
-    # Highlight the event line and add a marker for the selected offset
+    # Highlight the event line
     fig.add_vline(x=event_distm, line_dash="dash", line_color="red")
-    offset_index = event_index + offset
-    fig.add_scatter(x=[df_window.loc[offset_index, 'Distm']], y=[df_window.loc[offset_index, parameter]], mode='markers', marker=dict(color='green', size=10))
 
-    # Traffic light color mapping and vertical lines for changes
     # Traffic light color mapping and vertical lines for changes
     tl_color_map = {1: 'green', 2: 'orange', 3: 'red'}
-    
-    # Add vertical lines for traffic light changes
     prev_tl = None
     for idx, row in df_window.iterrows():
         if row['TL'] != prev_tl:
