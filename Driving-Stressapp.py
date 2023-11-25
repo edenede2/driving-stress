@@ -64,10 +64,10 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
                 comment = Comment("0 = None, 1 = green \n 2 = orange \n 3 = red", "Eden")
                 cell.comment = comment
             elif cell.value == "Participant":
-                comment = Comment("Participant number \n (\i.e. sub_001 = 001)\", "Eden")
+                comment = Comment("Participant number \n i.e. sub_001 = 001", "Eden")
                 cell.comment = comment
             elif cell.value == "Scenario":
-                comment = Comment("The type of the driving scenario \n (\i.e. A/B/C)\", "Eden")
+                comment = Comment("The type of the driving scenario \n i.e. A/B/C", "Eden")
                 cell.comment = comment
             elif cell.value == "Order":
                 comment = Comment("number of the scenario in order from 1 to 3", "Eden")
@@ -79,7 +79,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
                 comment = Comment("time from start in sec", "Eden")
                 cell.comment = comment
             elif cell.value == "Velm":
-                comment = Comment("distm/Time^2 (\speed)\", "Eden")
+                comment = Comment("distm/Time^2 \n speed", "Eden")
                 cell.comment = comment
             elif cell.value == "Distm":
                 comment = Comment("Distance from start", "Eden")
