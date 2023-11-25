@@ -18,7 +18,7 @@ def process_raw_file_for_streamlit(txt_file_path, original_file_name):
     df_sorted = construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name)
     return df_sorted
 
-def save_as_xlsx_with_highlight_refined(df, scenario, original_file_name):
+def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
     """
     Save the DataFrame as an XLSX file and highlight rows based on Distm values and scenario.
     Also, updates the Event column based on highlighted rows.
@@ -30,8 +30,8 @@ def save_as_xlsx_with_highlight_refined(df, scenario, original_file_name):
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
 
-    with pd.ExcelWriter("sorted_data.xlsx", engine='openpyxl') as writer:
-        # Write the DataFrame to XLSX
+    new_filename = f"sorted_{file_name.split('.')[0]}.xlsx"
+    with pd.ExcelWriter(new_filename, engine='openpyxl') as writer:  
         df.to_excel(writer, index=False, sheet_name='Sheet1')
         
         # Get the workbook and sheet for further editing
@@ -125,7 +125,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario, original_file_name):
                 for cell in row:
                     cell.fill = highlight_fill
                     
-    return f"sorted_{original_file_name}.xlsx"
+    return new_filename
 
 # "save_as_xlsx_with_highlight_refined"
 
@@ -498,9 +498,11 @@ def main():
 
                 # Offer option to download the sorted data
                 if st.button("Download Sorted Data as XLSX"):
+                    xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
+                    
                     with open(xlsx_path, "rb") as f:
                         b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download=f"sorted_{file_name}.xlsx">Download XLSX File</a>'
+                        href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
                         st.markdown(href, unsafe_allow_html=True)
 
             elif choice == "Event Analysis":
