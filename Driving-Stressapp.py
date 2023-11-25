@@ -39,7 +39,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
         worksheet = writer.sheets['Sheet1']
 
         # Define the fill pattern for specific cells
-        red_cells = PatternFill(start_color="008080", end_color="008080", fill_type="solid")  # Red color
+        red_cells = PatternFill(start_color="00FF8080", end_color="00FF8080", fill_type="solid")  # Red color
         green_cells = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
         blue_cells = PatternFill(start_color="00FFFF", end_color="00FFFF", fill_type="solid")
         Purple_cells = PatternFill(start_color="800080", end_color="800080", fill_type="solid")
