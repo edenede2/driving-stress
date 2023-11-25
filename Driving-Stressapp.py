@@ -194,7 +194,7 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
         participant_number, order = file_name.replace(".txt", "").split('_')
     else:
         participant_number, order = original_file_name.replace(".txt", "").split('_')
-    participant_number = int(participant_number)
+    participant_number = str(participant_number)
     order = int(order)
     
     with open(txt_file_path, 'r', errors='ignore') as f:
