@@ -323,9 +323,13 @@ def calculate_changes(df, event_row_index, offset):
     return changes
 
 
+import plotly.express as px
+
 def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
     Plot the change in the selected parameter around the event using Plotly with both line and scatter plots.
+    Add a condition for the 'BrakAcce' parameter to change the color of the dot to red if the change is 1.4 or more.
+    Add lines to mark the change of traffic lights.
     """
     df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
     
@@ -337,11 +341,18 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
+    # Calculate changes between consecutive rows for 'BrakAcce'
+    if parameter == 'BrakAcce':
+        df_window['BrakAcce_change'] = df_window['BrakAcce'].diff().abs()
+        color_conditions = np.where(df_window['BrakAcce_change'] >= 1.4, 'red', 'blue')
+    else:
+        color_conditions = 'blue'  # Default color for other parameters
+
     # Create Plotly line graph
     fig = px.line(df_window, x='Distm', y=parameter, hover_data=['Time', 'Distm'])
 
-    # Add scatter plot for the same data
-    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', hoverinfo='skip')
+    # Add scatter plot with conditional coloring
+    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', marker=dict(color=color_conditions))
 
     # Highlight the event line
     fig.add_vline(x=df_window.loc[event_index, 'Distm'], line_dash="dash", line_color="red")
@@ -350,11 +361,18 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     offset_index = event_index + offset
     fig.add_scatter(x=[df_window.loc[offset_index, 'Distm']], y=[df_window.loc[offset_index, parameter]], mode='markers', marker=dict(color='green', size=10))
 
+    # Mark traffic light changes
+    for idx, row in df_window.iterrows():
+        if idx > window_start and df_window.loc[idx, 'TL'] != df_window.loc[idx - 1, 'TL']:
+            tl_color = 'green' if row['TL'] == 1 else 'orange' if row['TL'] == 2 else 'red'
+            fig.add_vline(x=row['Distm'], line_dash="dot", line_color=tl_color)
+
     # Set titles and labels
     fig.update_layout(title=f'Change in {parameter} around Event {selected_event}', xaxis_title='Distm (Distance)', yaxis_title=parameter)
 
     # Display the plot in Streamlit
     st.plotly_chart(fig)
+
 
 def plot_speed_analysis(df, selected_event, pre_event_range, post_event_range):
     df['VelKPH'] = pd.to_numeric(df['VelKPH'], errors='coerce')
