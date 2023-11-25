@@ -363,11 +363,16 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     fig.add_scatter(x=[df_window.loc[offset_index, 'Distm']], y=[df_window.loc[offset_index, parameter]], mode='markers', marker=dict(color='green', size=10))
 
     # Traffic light color mapping and vertical lines for changes
+    # Traffic light color mapping and vertical lines for changes
     tl_color_map = {1: 'green', 2: 'orange', 3: 'red'}
+    
+    # Add vertical lines for traffic light changes
+    prev_tl = None
     for idx, row in df_window.iterrows():
-        if idx > window_start and df_window.loc[idx, 'TL'] != df_window.loc[idx - 1, 'TL']:
+        if row['TL'] != prev_tl:
             tl_color = tl_color_map.get(row['TL'], 'grey')
             fig.add_vline(x=row['Distm'], line_dash="dot", line_color=tl_color)
+            prev_tl = row['TL']
 
     # Set titles and labels
     fig.update_layout(title=f'Change in {parameter} around Event {selected_event}', xaxis_title='Distm (Distance)', yaxis_title=parameter)
