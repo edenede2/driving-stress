@@ -325,7 +325,7 @@ def calculate_changes(df, event_row_index, offset):
 
 def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event_range, post_event_range):
     """
-    Plot the change in the selected parameter around the event using Plotly.
+    Plot the change in the selected parameter around the event using Plotly with both line and scatter plots.
     """
     df[parameter] = pd.to_numeric(df[parameter], errors='coerce')
     
@@ -337,9 +337,12 @@ def plot_event_analysis_updated(df, selected_event, parameter, offset, pre_event
     window_end = min(df.shape[0], event_index + post_event_range)
     df_window = df.iloc[window_start:window_end]
 
-    # Create Plotly graph
-    fig = px.scatter(df_window, x='Distm', y=parameter, hover_data=['Time', 'Distm'])
-    
+    # Create Plotly line graph
+    fig = px.line(df_window, x='Distm', y=parameter, hover_data=['Time', 'Distm'])
+
+    # Add scatter plot for the same data
+    fig.add_scatter(x=df_window['Distm'], y=df_window[parameter], mode='markers', hoverinfo='skip')
+
     # Highlight the event line
     fig.add_vline(x=df_window.loc[event_index, 'Distm'], line_dash="dash", line_color="red")
 
