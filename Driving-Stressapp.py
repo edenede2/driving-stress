@@ -459,6 +459,7 @@ def main():
     if uploaded_file is not None:
         # Capture the original file name
         original_file_name = uploaded_file.name
+        file_name = original_file_name.split(".")[0]
 
         # Save the uploaded file to a temporary location
         with open("temp.txt", "wb") as f:
@@ -493,13 +494,13 @@ def main():
                 scenario = df_sorted['Scenario'].iloc[0]
 
                 # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, original_file_name)
+                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
 
                 # Offer option to download the sorted data
                 if st.button("Download Sorted Data as XLSX"):
                     with open(xlsx_path, "rb") as f:
                         b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download=f"sorted_{original_file_name}.xlsx">Download XLSX File</a>'
+                        href = f'<a href="data:file/xlsx;base64,{b64}" download=f"sorted_{file_name}.xlsx">Download XLSX File</a>'
                         st.markdown(href, unsafe_allow_html=True)
 
             elif choice == "Event Analysis":
