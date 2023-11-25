@@ -41,7 +41,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
         # Define the fill pattern for specific cells
         red_cells = PatternFill(start_color="00FF8080", end_color="00FF8080", fill_type="solid")  # Red color
         green_cells = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
-        blue_cells = PatternFill(start_color="00FFFF", end_color="00FFFF", fill_type="solid")
+        blue_cells = PatternFill(start_color="0000CCFF", end_color="0000CCFF", fill_type="solid")
         Purple_cells = PatternFill(start_color="800080", end_color="800080", fill_type="solid")
 
         # Apply formatting to specific header cells
