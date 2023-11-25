@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Color, Alignment
+from openpyxl.comments import Comment
 
 HIGHLIGHT_VALUES = {
     'A': [1592, 2923, 3082, 3500, 3940, 4705, 5053, 4430, 6580],
@@ -37,15 +38,85 @@ def save_as_xlsx_with_highlight_refined(df, scenario):
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
 
+        # Define the fill pattern for specific cells
+        red_cells = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")  # Red color
+        green_cells = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+        blue_cells = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")
+        Purple_cells = PatternFill(start_color="800080", end_color="800080", fill_type="solid")
+
+        # Apply formatting to specific header cells
+        red_headers = ['Time', 'Velm']  # List of headers to color, adjust as needed
+        green_headers = ['Eve2Y', 'Eve2X', 'Eve2Vel', 'Eve4Y', 'Eve4X', 'Eve4Vel', 'Eve4Y', 'Eve6X', 'Eve6Vel', 'Eve8Y', 'Eve8X', 'Eve8Vel']
+        blue_headers = ['IncVm', 'IncRm', 'WheeleAng', 'ThrAcce', 'BrakAcce','TL','Crashes','???', 'VelKPH','CompTime','YawRate','WheeleOP','ThrOP','BrakOP','WheeleYawRate','InertialAng','OPState']
+        purple_headers = ['FirstRT', 'First Ditance']
+  
         # Formatting header row
         for cell in worksheet[1]:  # worksheet[1] is the first row (header row)
             cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-            cell.font = Font(bold=True)
+            cell.font = Font(bold=False)
             cell.alignment = Alignment(horizontal='center')
 
             # Add specific labels to certain cells if needed
-            if cell.value == "SomeColumnName":  # Replace with your column name
-                cell.value = "NewLabel"  # Replace with your new label
+            if cell.value == "Crashes":  # Replace with your column name
+                comment = Comment("1 = Vehicle collisions \n 2 = Off road collisions \n 3 = Collisions with pedestrians \n 4 = Collisions with lane markers (\barrels, cones, etc.)\ \n 5 = Collisions with Jersey Barriers \n 6 = Collisions with collision blocks", "Eden")  # Replace with your comment and author name
+                cell.comment = comment
+            elif cell.value == "TL":
+                comment = Comment("0 = None, 1 = green \n 2 = orange \n 3 = red", "Eden")
+                cell.comment = comment
+            elif cell.value == "Participant":
+                comment = Comment("Participant number \n (\i.e. sub_001 = 001)\", "Eden")
+                cell.comment = comment
+            elif cell.value == "Scenario":
+                comment = Comment("The type of the driving scenario \n (\i.e. A/B/C)\", "Eden")
+                cell.comment = comment
+            elif cell.value == "Order":
+                comment = Comment("number of the scenario in order from 1 to 3", "Eden")
+                cell.comment = comment
+            elif cell.value == "Event":
+                comment = Comment("the number of the event \n per scenario", "Eden")
+                cell.comment = comment
+            elif cell.value == "Time":
+                comment = Comment("time from start in sec", "Eden")
+                cell.comment = comment
+            elif cell.value == "Velm":
+                comment = Comment("distm/Time^2 (\speed)\", "Eden")
+                cell.comment = comment
+            elif cell.value == "Distm":
+                comment = Comment("Distance from start", "Eden")
+                cell.comment = comment
+            elif cell.value == "Xm":
+                comment = Comment("horizontal location \n 0 = middle of the road", "Eden")
+                cell.comment = comment
+            elif cell.value == "WheeleAng":
+                comment = Comment("The movement of the wheel", "Eden")
+                cell.comment = comment
+            elif cell.value == "ThrAcce":
+                comment = Comment("gas pedale", "Eden")
+                cell.comment = comment
+            elif cell.value == "BrakAcce":
+                comment = Comment("Braks pedale", "Eden")
+                cell.comment = comment
+            elif cell.value == "FirstRT":
+                comment = Comment("First reaction time \n event time - reaction time", "Eden")
+                cell.comment = comment        
+            elif cell.value == "First Ditance":
+                comment = Comment("First reaction distance \n event distace - reaction distance")
+                cell.comment = comment
+
+
+        
+        for col_num, column_title in enumerate(worksheet[1], start=1):  # worksheet[1] is the header row
+            cell = worksheet.cell(row=1, column=col_num)
+            if column_title.value in red_cells:
+                cell.fill = red_cells
+            elif column_title.value in green_headers:
+                cell.fill = green_cells
+            elif column_title.value in blue_headers:
+                cell.fill = blue_cells
+            elif column_title.value in purple_headers:
+                cell.fill = purple_cells
+
+
         
         # Iterate over the rows to highlight rows with an 'Event'
         for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
@@ -428,7 +499,7 @@ def main():
                 if st.button("Download Sorted Data as XLSX"):
                     with open(xlsx_path, "rb") as f:
                         b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download="sorted_data.xlsx">Download XLSX File</a>'
+                        href = f'<a href="data:file/xlsx;base64,{b64}" download=f"sorted_{original_file_name}.xlsx">Download XLSX File</a>'
                         st.markdown(href, unsafe_allow_html=True)
 
             elif choice == "Event Analysis":
