@@ -478,48 +478,48 @@ def main():
         with open("temp.txt", "wb") as f:
             f.write(uploaded_file.getvalue())
 
-        try:
-            # Process the uploaded file
-            df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
-
-            if choice == "Home":
-                # Display the processed data
-                st.dataframe(df_sorted)
-                st.subheader("Edit Event Highlight Values")
-                scenario = df_sorted['Scenario'].iloc[0]
-                current_values = HIGHLIGHT_VALUES.get(scenario, [])
-                
-                # Display a text box for each event
-                modified_values = []
-                for i, value in enumerate(current_values):
-                    new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
-                    try:
-                        modified_values.append(float(new_value))
-                    except ValueError:
-                        st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
-                
-                # Update HIGHLIGHT_VALUES when the button is pressed
-                if st.button("Accept Changes"):
-                    HIGHLIGHT_VALUES[scenario] = modified_values
-                    df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+            try:
+                # Process the uploaded file
+                df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+    
+                if choice == "Home":
+                    # Display the processed data
                     st.dataframe(df_sorted)
-
-                scenario = df_sorted['Scenario'].iloc[0]
-
-                # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
-
-                # Offer option to download the sorted data
-                if st.button("Download Sorted Data as XLSX"):
-                    xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
+                    st.subheader("Edit Event Highlight Values")
+                    scenario = df_sorted['Scenario'].iloc[0]
+                    current_values = HIGHLIGHT_VALUES.get(scenario, [])
                     
-                    with open(xlsx_path, "rb") as f:
-                        b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
-                        st.markdown(href, unsafe_allow_html=True)
-
-            elif choice == "Event Analysis":
-                show_event_analysis_with_scatter(df_sorted)
+                    # Display a text box for each event
+                    modified_values = []
+                    for i, value in enumerate(current_values):
+                        new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
+                        try:
+                            modified_values.append(float(new_value))
+                        except ValueError:
+                            st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
+                    
+                    # Update HIGHLIGHT_VALUES when the button is pressed
+                    if st.button("Accept Changes"):
+                        HIGHLIGHT_VALUES[scenario] = modified_values
+                        df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+                        st.dataframe(df_sorted)
+    
+                    scenario = df_sorted['Scenario'].iloc[0]
+    
+                    # Save the processed data as an XLSX file with highlighting
+                    xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
+    
+                    # Offer option to download the sorted data
+                    if st.button("Download Sorted Data as XLSX"):
+                        xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
+                        
+                        with open(xlsx_path, "rb") as f:
+                            b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
+                            href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
+                            st.markdown(href, unsafe_allow_html=True)
+    
+                elif choice == "Event Analysis":
+                    show_event_analysis_with_scatter(df_sorted)
 
         except Exception as e:
             st.write("An error occurred:", str(e))
