@@ -143,30 +143,29 @@ def extract_structured_data_v6(file_content):
     short_line_count = 0  # Counter to track consecutive short lines
     
     for line in file_content.split('\n'):
-        for line in f:
-            # If the line contains "Block #1: output_data,", prepare to start reading the structured data
-            if "Block #1:   output_data," in line:
-                start_reading = True
-                continue  # skip the current line
-            
-            # If we've started reading
-            if start_reading:
-                # Skip the next two lines after "Block #1: output_data,"
-                if skip_count > 0:
-                    skip_count -= 2
-                    continue
+        # If the line contains "Block #1: output_data,", prepare to start reading the structured data
+        if "Block #1:   output_data," in line:
+            start_reading = True
+            continue  # skip the current line
+        
+        # If we've started reading
+        if start_reading:
+            # Skip the next two lines after "Block #1: output_data,"
+            if skip_count > 0:
+                skip_count -= 2
+                continue
 
-                # If the line has a reasonable length (indicative of structured data)
-                if len(line) > 100:
-                    structured_data.append(line.strip())
-                    short_line_count = 0  # Reset the short line counter
-                else:
-                    short_line_count += 1  # Increment the short line counter
-                
-                    # If we encounter two consecutive short lines, stop the extraction
-                    if short_line_count >= 2:
-                        break
-    
+            # If the line has a reasonable length (indicative of structured data)
+            if len(line) > 100:
+                structured_data.append(line.strip())
+                short_line_count = 0  # Reset the short line counter
+            else:
+                short_line_count += 1  # Increment the short line counter
+            
+                # If we encounter two consecutive short lines, stop the extraction
+                if short_line_count >= 2:
+                    break
+
     return structured_data
 
 # Determine the header for the sorted data based on the 5th row of the txt file
