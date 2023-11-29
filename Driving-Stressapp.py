@@ -493,7 +493,7 @@ def main():
                 # Update HIGHLIGHT_VALUES when the button is pressed
                 if st.button("Accept Changes"):
                     HIGHLIGHT_VALUES[scenario] = modified_values
-                    df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+                    df_sorted = process_raw_file_for_streamlit(file_content, original_file_name)
                     st.dataframe(df_sorted)
 
                 scenario = df_sorted['Scenario'].iloc[0]
