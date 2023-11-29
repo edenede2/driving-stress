@@ -128,7 +128,7 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
                 if event_value:  # If there's an event value, highlight the row
                     for cell in row:
                         cell.fill = highlight_fill
-       if os.path.exists(new_filename):
+        if os.path.exists(new_filename):
             print(f"File created successfully: {new_filename}")
         else:
             print(f"Failed to create the file: {new_filename}")
