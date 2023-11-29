@@ -550,19 +550,25 @@ def main():
                 xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
 
                 # Offer option to download the sorted data
+                # Inside the main function
+
                 if st.button("Download Sorted Data as XLSX"):
                     xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
-                    
+                
                     if xlsx_path:
                         try:
-                            with open(xlsx_path, "rb") as f:
-                                b64 = base64.b64encode(f.read()).decode()
+                            # Open the file and encode its contents for download
+                            with open(xlsx_path, "rb") as file:
+                                b64 = base64.b64encode(file.read()).decode()
                                 href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
                                 st.markdown(href, unsafe_allow_html=True)
+                        except IOError as e:
+                            st.error(f"An error occurred while reading the file: {e}")
                         except Exception as e:
-                            st.error(f"An error occurred during file download: {e}")
+                            st.error(f"An unexpected error occurred: {e}")
                     else:
                         st.error("Failed to create the XLSX file for download.")
+
 
             elif choice == "Event Analysis":
                 show_event_analysis_with_scatter(df_sorted)
