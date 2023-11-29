@@ -188,11 +188,7 @@ def determine_header(file_content):
 def construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name):
     header_df = determine_header(file_content)
     
-    file_name = file_content.split('/')[-1]
-    if file_name != 'temp.txt':
-        participant_number, order = file_name.replace(".txt", "").split('_')
-    else:
-        participant_number, order = original_file_name.replace(".txt", "").split('_')
+    participant_number, order = original_file_name.replace(".txt", "").split('_')
     participant_number = str(participant_number)
     order = int(order)
     
