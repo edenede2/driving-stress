@@ -14,9 +14,10 @@ HIGHLIGHT_VALUES = {
     'B': [1032, 1980, 2661, 3250, 4332, 5560, 5845, 5945, 6487, 7850],
     'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
 }
-def process_raw_file_for_streamlit(txt_file_path, original_file_name):
-    structured_data = extract_structured_data_v6(txt_file_path)
-    df_sorted = construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name)
+def process_raw_file_for_streamlit(uploaded_file, original_file_name):
+    file_content = uploaded_file.getvalue().decode("utf-8")
+    structured_data = extract_structured_data_v6(file_content)
+    df_sorted = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name)
     return df_sorted
 
 def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
@@ -135,14 +136,13 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
 
 
 # Extract structured data from raw file
-def extract_structured_data_v6(txt_file_path):
+def extract_structured_data_v6(file_content):
     structured_data = []
     start_reading = False
     skip_count = 2  # Number of lines to skip after the "Block #1: output_data," line
     short_line_count = 0  # Counter to track consecutive short lines
     
-    # Open the txt file and read lines
-    with open(txt_file_path, 'r', errors='ignore') as f:
+    for line in file_content.split('\n'):
         for line in f:
             # If the line contains "Block #1: output_data,", prepare to start reading the structured data
             if "Block #1:   output_data," in line:
@@ -170,11 +170,9 @@ def extract_structured_data_v6(txt_file_path):
     return structured_data
 
 # Determine the header for the sorted data based on the 5th row of the txt file
-def determine_header(txt_file_path):
-    with open(txt_file_path, 'r', errors='ignore') as f:
-        for _ in range(4):  # skip the first 4 lines
-            next(f)
-        fifth_line = f.readline().strip()
+def determine_header(file_content):
+    lines = file_content.split('\n')
+    fifth_line = lines[4].strip()
 
     if "Scenario1\Scenario1 - Copy.txt" in fifth_line or "Scenario1\Scenario1 - Copy.evt" in fifth_line:
         return pd.read_csv("TestA.csv")
@@ -188,10 +186,10 @@ def determine_header(txt_file_path):
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
-def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, original_file_name):
-    header_df = determine_header(txt_file_path)
+def construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name):
+    header_df = determine_header(file_content)
     
-    file_name = txt_file_path.split('/')[-1]
+    file_name = file_content.split('/')[-1]
     if file_name != 'temp.txt':
         participant_number, order = file_name.replace(".txt", "").split('_')
     else:
@@ -199,10 +197,9 @@ def construct_dataframe_optimized_v2_refined(txt_file_path, structured_data, ori
     participant_number = str(participant_number)
     order = int(order)
     
-    with open(txt_file_path, 'r', errors='ignore') as f:
-        for _ in range(4):
-            next(f)
-        fifth_line = f.readline().strip()
+    lines = file_content.split('\n')
+    fifth_line = lines[4].strip()
+    
     if "Scenario1\Scenario1 - Copy.txt" or "Scenario1\Scenario1 - Copy.evt" in fifth_line:
         scenario = "A"
     elif "Senario2\Scenario2.txt" or "Senario2\Scenario2.evt" in fifth_line:
@@ -472,11 +469,11 @@ def main():
     if uploaded_file is not None:
         # Capture the original file name
         original_file_name = uploaded_file.name
-        file_name = original_file_name.split(".")[0]
+        # file_name = original_file_name.split(".")[0]
 
-        # Save the uploaded file to a temporary location
-        with open("temp.txt", "wb") as f:
-            f.write(uploaded_file.getvalue())
+        # # Save the uploaded file to a temporary location
+        # with open("temp.txt", "wb") as f:
+        #     f.write(uploaded_file.getvalue())
 
             try:
                 # Process the uploaded file
