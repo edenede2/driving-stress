@@ -494,7 +494,7 @@ def main():
                 if st.button("Accept Changes"):
                     HIGHLIGHT_VALUES[scenario] = modified_values
                     df_sorted = process_raw_file_for_streamlit(file_content, original_file_name)
-                    st.markdown(':green[The events' distance values been update !')
+                    st.markdown(':green[The events distance values been update !')
                     # st.dataframe(df_sorted)
 
                 scenario = df_sorted['Scenario'].iloc[0]
