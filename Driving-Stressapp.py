@@ -521,7 +521,7 @@ def main():
                 elif choice == "Event Analysis":
                     show_event_analysis_with_scatter(df_sorted)
 
-        except Exception as e:
-            st.write("An error occurred:", str(e))
+            except Exception as e:
+                st.write("An error occurred:", str(e))
 if __name__ == "__main__":
     main()
