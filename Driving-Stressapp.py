@@ -464,7 +464,7 @@ def main():
     if uploaded_file is not None:
         # Capture the original file name
         original_file_name = uploaded_file.name
-        # file_name = original_file_name.split(".")[0]
+        file_name = original_file_name.split(".")[0]
 
         # # Save the uploaded file to a temporary location
         # with open("temp.txt", "wb") as f:
