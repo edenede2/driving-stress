@@ -173,14 +173,12 @@ def determine_header(file_content):
     lines = file_content.split('\n')
     fifth_line = lines[4].strip()
 
-    if "Scenario1\Scenario1 - Copy.txt" in fifth_line or "Scenario1\Scenario1 - Copy.evt" in fifth_line:
+    if "Scenario1" in fifth_line:
         return pd.read_csv("TestA.csv")
-    elif "Senario2\Scenario2.txt" in fifth_line or "Senario2\Scenario2.evt" in fifth_line:
+    elif "Senario2" in fifth_line:
         return pd.read_csv("TestB.csv")
-    elif "Scenario3\Scenario3.txt" in fifth_line or "Scenario3\Scenario3.evt" in fifth_line:
+    elif "Scenario3" in fifth_line:
         return pd.read_csv("TestC.csv")
-
-
     else:
         raise ValueError("Unrecognized scenario in file.")
 
@@ -194,12 +192,12 @@ def construct_dataframe_optimized_v2_refined(file_content, structured_data, orig
     
     lines = file_content.split('\n')
     fifth_line = lines[4].strip()
-    
-    if "Scenario1\Scenario1 - Copy.txt" or "Scenario1\Scenario1 - Copy.evt" in fifth_line:
+   
+    if "Scenario1" in fifth_line:
         scenario = "A"
-    elif "Senario2\Scenario2.txt" or "Senario2\Scenario2.evt" in fifth_line:
+    elif "Senario2" in fifth_line:
         scenario = "B"
-    elif "Scenario3\Scenario3.txt" or "Scenario3\Scenario3.evt" in fifth_line:
+    elif "Scenario3" in fifth_line:
         scenario = "C"
     else:
         scenario = None
