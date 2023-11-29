@@ -32,9 +32,20 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
     try:
-        new_filename = f"sorted_{file_name.split('.')[0]}.xlsx"
-        with pd.ExcelWriter(new_filename, engine='openpyxl') as writer:  
-            df.to_excel(writer, index=False, sheet_name='Sheet1')
+        try:
+            new_filename = f"test_{file_name.split('.')[0]}.xlsx"
+            df.to_excel(new_filename, index=False)  # Create a basic XLSX file without formatting
+    
+            if os.path.exists(new_filename):
+                print(f"File created successfully: {new_filename}")
+                return new_filename
+            else:
+                print(f"Failed to create the file: {new_filename}")
+                return None
+    
+        except Exception as e:
+            print(f"An error occurred during file creation: {e}")
+            return None
             
             # Get the workbook and sheet for further editing
             workbook = writer.book
