@@ -31,105 +31,114 @@ def save_as_xlsx_with_highlight_refined(df, scenario, file_name):
     numeric_columns = ['Time', 'Velm', 'Distm', 'Xm', 'IncVm', 'IncRm', 'WheeleAng', 'ThrAcce', 'BrakAcce', 'TL', 'Crashes']
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors='coerce', downcast='float')
+    try:
+        new_filename = f"sorted_{file_name.split('.')[0]}.xlsx"
+        with pd.ExcelWriter(new_filename, engine='openpyxl') as writer:  
+            df.to_excel(writer, index=False, sheet_name='Sheet1')
+            
+            # Get the workbook and sheet for further editing
+            workbook = writer.book
+            worksheet = writer.sheets['Sheet1']
+    
+            # Define the fill pattern for specific cells
+            red_cells = PatternFill(start_color="00FF8080", end_color="00FF8080", fill_type="solid")  # Red color
+            green_cells = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+            blue_cells = PatternFill(start_color="0000CCFF", end_color="0000CCFF", fill_type="solid")
+            Purple_cells = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    
+            # Apply formatting to specific header cells
+            red_headers = ['Time', 'Velm']  # List of headers to color, adjust as needed
+            green_headers = ['Eve2Y', 'Eve2X', 'Eve2Vel', 'Eve4Y', 'Eve4X', 'Eve4Vel', 'Eve4Y', 'Eve6X', 'Eve6Vel', 'Eve8Y', 'Eve8X', 'Eve8Vel']
+            blue_headers = ['IncVm', 'IncRm', 'WheeleAng', 'ThrAcce', 'BrakAcce','TL','Crashes','???', 'VelKPH','CompTime','YawRate','WheeleOP','ThrOP','BrakOP','WheeleYawRate','InertialAng','OPState']
+            purple_headers = ['FirstRT', 'First Ditance']
+      
+            # Formatting header row
+            for cell in worksheet[1]:  # worksheet[1] is the first row (header row)
+                cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+                cell.font = Font(bold=False)
+                cell.alignment = Alignment(horizontal='center')
+    
+                # Add specific labels to certain cells if needed
+                # Add specific labels to certain cells if needed
+                if cell.value == "Crashes":
+                    comment = Comment("1 = Vehicle collisions; 2 = Off road collisions; 3 = Collisions with pedestrians; 4 = Collisions with lane markers (barrels, cones, etc.); 5 = Collisions with Jersey Barriers; 6 = Collisions with collision blocks", "Eden")
+                    cell.comment = comment
+                elif cell.value == "TL":
+                    comment = Comment("0 = None, 1 = green; 2 = orange; 3 = red", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Participant":
+                    comment = Comment("Participant number (e.g., sub_001 = 001)", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Scenario":
+                    comment = Comment("The type of the driving scenario (e.g., A/B/C)", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Order":
+                    comment = Comment("Number of the scenario in order from 1 to 3", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Event":
+                    comment = Comment("The number of the event per scenario", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Time":
+                    comment = Comment("Time from start in seconds", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Velm":
+                    comment = Comment("Velocity (distm/Time^2), represents speed", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Distm":
+                    comment = Comment("Distance from start", "Eden")
+                    cell.comment = comment
+                elif cell.value == "Xm":
+                    comment = Comment("Horizontal location (0 = middle of the road)", "Eden")
+                    cell.comment = comment
+                elif cell.value == "WheeleAng":
+                    comment = Comment("The movement of the wheel", "Eden")
+                    cell.comment = comment
+                elif cell.value == "ThrAcce":
+                    comment = Comment("Gas pedal", "Eden")
+                    cell.comment = comment
+                elif cell.value == "BrakAcce":
+                    comment = Comment("Brake pedal", "Eden")
+                    cell.comment = comment
+                elif cell.value == "FirstRT":
+                    comment = Comment("First reaction time (event time - reaction time)", "Eden")
+                    cell.comment = comment        
+                elif cell.value == "First Ditance":
+                    comment = Comment("First reaction distance (event distance - reaction distance)", "Eden")
+                    cell.comment = comment
+    
+    
+    
+            
+            for col_num, column_title in enumerate(worksheet[1], start=1):  # worksheet[1] is the header row
+                cell = worksheet.cell(row=1, column=col_num)
+                if column_title.value in red_headers:
+                    cell.fill = red_cells
+                elif column_title.value in green_headers:
+                    cell.fill = green_cells
+                elif column_title.value in blue_headers:
+                    cell.fill = blue_cells
+                elif column_title.value in purple_headers:
+                    cell.fill = Purple_cells
+    
+    
+            
+            # Iterate over the rows to highlight rows with an 'Event'
+            for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
+                event_value = worksheet.cell(row=row_idx, column=4).value
+                if event_value:  # If there's an event value, highlight the row
+                    for cell in row:
+                        cell.fill = highlight_fill
+       if os.path.exists(new_filename):
+            print(f"File created successfully: {new_filename}")
+        else:
+            print(f"Failed to create the file: {new_filename}")
+            return None  # Return None if file creation failed
 
-    new_filename = f"sorted_{file_name.split('.')[0]}.xlsx"
-    with pd.ExcelWriter(new_filename, engine='openpyxl') as writer:  
-        df.to_excel(writer, index=False, sheet_name='Sheet1')
+        return new_filename
         
-        # Get the workbook and sheet for further editing
-        workbook = writer.book
-        worksheet = writer.sheets['Sheet1']
-
-        # Define the fill pattern for specific cells
-        red_cells = PatternFill(start_color="00FF8080", end_color="00FF8080", fill_type="solid")  # Red color
-        green_cells = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
-        blue_cells = PatternFill(start_color="0000CCFF", end_color="0000CCFF", fill_type="solid")
-        Purple_cells = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-
-        # Apply formatting to specific header cells
-        red_headers = ['Time', 'Velm']  # List of headers to color, adjust as needed
-        green_headers = ['Eve2Y', 'Eve2X', 'Eve2Vel', 'Eve4Y', 'Eve4X', 'Eve4Vel', 'Eve4Y', 'Eve6X', 'Eve6Vel', 'Eve8Y', 'Eve8X', 'Eve8Vel']
-        blue_headers = ['IncVm', 'IncRm', 'WheeleAng', 'ThrAcce', 'BrakAcce','TL','Crashes','???', 'VelKPH','CompTime','YawRate','WheeleOP','ThrOP','BrakOP','WheeleYawRate','InertialAng','OPState']
-        purple_headers = ['FirstRT', 'First Ditance']
-  
-        # Formatting header row
-        for cell in worksheet[1]:  # worksheet[1] is the first row (header row)
-            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-            cell.font = Font(bold=False)
-            cell.alignment = Alignment(horizontal='center')
-
-            # Add specific labels to certain cells if needed
-            # Add specific labels to certain cells if needed
-            if cell.value == "Crashes":
-                comment = Comment("1 = Vehicle collisions; 2 = Off road collisions; 3 = Collisions with pedestrians; 4 = Collisions with lane markers (barrels, cones, etc.); 5 = Collisions with Jersey Barriers; 6 = Collisions with collision blocks", "Eden")
-                cell.comment = comment
-            elif cell.value == "TL":
-                comment = Comment("0 = None, 1 = green; 2 = orange; 3 = red", "Eden")
-                cell.comment = comment
-            elif cell.value == "Participant":
-                comment = Comment("Participant number (e.g., sub_001 = 001)", "Eden")
-                cell.comment = comment
-            elif cell.value == "Scenario":
-                comment = Comment("The type of the driving scenario (e.g., A/B/C)", "Eden")
-                cell.comment = comment
-            elif cell.value == "Order":
-                comment = Comment("Number of the scenario in order from 1 to 3", "Eden")
-                cell.comment = comment
-            elif cell.value == "Event":
-                comment = Comment("The number of the event per scenario", "Eden")
-                cell.comment = comment
-            elif cell.value == "Time":
-                comment = Comment("Time from start in seconds", "Eden")
-                cell.comment = comment
-            elif cell.value == "Velm":
-                comment = Comment("Velocity (distm/Time^2), represents speed", "Eden")
-                cell.comment = comment
-            elif cell.value == "Distm":
-                comment = Comment("Distance from start", "Eden")
-                cell.comment = comment
-            elif cell.value == "Xm":
-                comment = Comment("Horizontal location (0 = middle of the road)", "Eden")
-                cell.comment = comment
-            elif cell.value == "WheeleAng":
-                comment = Comment("The movement of the wheel", "Eden")
-                cell.comment = comment
-            elif cell.value == "ThrAcce":
-                comment = Comment("Gas pedal", "Eden")
-                cell.comment = comment
-            elif cell.value == "BrakAcce":
-                comment = Comment("Brake pedal", "Eden")
-                cell.comment = comment
-            elif cell.value == "FirstRT":
-                comment = Comment("First reaction time (event time - reaction time)", "Eden")
-                cell.comment = comment        
-            elif cell.value == "First Ditance":
-                comment = Comment("First reaction distance (event distance - reaction distance)", "Eden")
-                cell.comment = comment
-
-
-
-        
-        for col_num, column_title in enumerate(worksheet[1], start=1):  # worksheet[1] is the header row
-            cell = worksheet.cell(row=1, column=col_num)
-            if column_title.value in red_headers:
-                cell.fill = red_cells
-            elif column_title.value in green_headers:
-                cell.fill = green_cells
-            elif column_title.value in blue_headers:
-                cell.fill = blue_cells
-            elif column_title.value in purple_headers:
-                cell.fill = Purple_cells
-
-
-        
-        # Iterate over the rows to highlight rows with an 'Event'
-        for row_idx, row in enumerate(worksheet.iter_rows(min_row=2, max_row=worksheet.max_row), start=1):
-            event_value = worksheet.cell(row=row_idx, column=4).value
-            if event_value:  # If there's an event value, highlight the row
-                for cell in row:
-                    cell.fill = highlight_fill
-                    
-    return new_filename
+    except Exception as e:
+        print(f"An error occurred during file creation: {e}")
+        return None                    
 
 # "save_as_xlsx_with_highlight_refined"
 
@@ -493,7 +502,7 @@ def main():
                 # Update HIGHLIGHT_VALUES when the button is pressed
                 if st.button("Accept Changes"):
                     HIGHLIGHT_VALUES[scenario] = modified_values
-                    df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+                    df_sorted = process_raw_file_for_streamlit(file_content, original_file_name)
                     st.dataframe(df_sorted)
 
                 scenario = df_sorted['Scenario'].iloc[0]
@@ -505,10 +514,16 @@ def main():
                 if st.button("Download Sorted Data as XLSX"):
                     xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
                     
-                    with open(xlsx_path, "rb") as f:
-                        b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
-                        st.markdown(href, unsafe_allow_html=True)
+                    if xlsx_path:
+                        try:
+                            with open(xlsx_path, "rb") as f:
+                                b64 = base64.b64encode(f.read()).decode()
+                                href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
+                                st.markdown(href, unsafe_allow_html=True)
+                        except Exception as e:
+                            st.error(f"An error occurred during file download: {e}")
+                    else:
+                        st.error("Failed to create the XLSX file for download.")
 
             elif choice == "Event Analysis":
                 show_event_analysis_with_scatter(df_sorted)
