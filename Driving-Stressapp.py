@@ -15,7 +15,7 @@ HIGHLIGHT_VALUES = {
     'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
 }
 def process_raw_file_for_streamlit(uploaded_file, original_file_name):
-    file_content = uploaded_file.getvalue().decode("utf-8")
+    file_content = uploaded_file
     structured_data = extract_structured_data_v6(file_content)
     df_sorted = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name)
     return df_sorted
@@ -461,6 +461,8 @@ def main():
 
     if uploaded_file is not None:
         # Capture the original file name
+        file_content = uploaded_file.getvalue().decode('utf-8')
+
         original_file_name = uploaded_file.name
         file_name = original_file_name.split(".")[0]
 
@@ -470,7 +472,7 @@ def main():
 
         try:
             # Process the uploaded file
-            df_sorted = process_raw_file_for_streamlit(uploaded_file, original_file_name)
+            df_sorted = process_raw_file_for_streamlit(file_content, original_file_name)
 
             if choice == "Home":
                 # Display the processed data
