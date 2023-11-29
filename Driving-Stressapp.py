@@ -480,7 +480,7 @@ def main():
 
             try:
                 # Process the uploaded file
-                df_sorted = process_raw_file_for_streamlit("temp.txt", original_file_name)
+                df_sorted = process_raw_file_for_streamlit(uploaded_file, original_file_name)
     
                 if choice == "Home":
                     # Display the processed data
