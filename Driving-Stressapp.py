@@ -549,7 +549,6 @@ def main():
     uploaded_file = st.file_uploader("Choose a file")
 
     config_path = 'events_config.txt'
-
     events, eve_triggers, events_scenarios = read_and_parse_events_config(config_path)
 
 
@@ -571,8 +570,7 @@ def main():
 
     if uploaded_file is not None:
         # Read the content of the file
-        file_content = uploaded_file.read()
-
+        file_content = uploaded_file.getvalue().decode('utf-8')
         original_file_name = uploaded_file.name
         file_name = original_file_name.split(".")[0]
         try:
