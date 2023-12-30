@@ -241,10 +241,22 @@ def construct_dataframe_optimized_v2_refined(file_content, original_file_name, r
     structured_data = extract_structured_data_v6(file_content)
     header_df = determine_header(file_content)
 
-    # Extract participant number and order from file name
-    participant_number, order = original_file_name.replace(".txt", "").split('_')
-    participant_number = str(participant_number)
-    order = int(order)
+    # Initialize default values for participant number and order
+    participant_number = "unknown"
+    order = 0
+
+    # Check if the file name contains an underscore and process accordingly
+    if "_" in original_file_name:
+        try:
+            # Extract participant number and order from file name
+            participant_number, order_str = original_file_name.replace(".txt", "").split('_')
+            order = int(order_str)  # Convert order to an integer
+        except ValueError as e:
+            print(f"Error processing file name {original_file_name}: {e}")
+            # Handle the error as needed (e.g., set default values or return)
+    else:
+        print(f"File name {original_file_name} does not follow the expected format ('participantNumber_order.txt')")
+
 
     
     # Construct rows based on structured data
