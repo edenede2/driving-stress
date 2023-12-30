@@ -287,17 +287,17 @@ def construct_dataframe_optimized_v2_refined(file_content, original_file_name, r
 
     return df
 
-def update_event_detection(df, eve_triggers):
-    # Initialize the last detected event to None
-    last_event_detected = None
-    
+def update_event_detection(df, relevant_eve_triggers):
+    # Initialize a counter for event numbering
+    event_counter = 1
+
     # Iterate through each event trigger condition
-    for event_code, condition in eve_triggers.items():
+    for event_code, condition in relevant_eve_triggers.items():
         column, operation, value = parse_condition(condition)
         # Ensure the column for condition is in numeric format
         df[column] = pd.to_numeric(df[column], errors='coerce')
-        
-        # Detect event based on condition and ensure it's the first occurrence since the last event
+
+        # Detect event based on condition
         if operation == '==':
             condition_met = df[column] == float(value)
         elif operation == '>':
@@ -306,14 +306,15 @@ def update_event_detection(df, eve_triggers):
             condition_met = df[column] < float(value)
         else:
             continue  # Skip if operation is not recognized
-        
-        # Apply condition and ensure only the first occurrence is marked
-        for idx, met in condition_met.items():
-            if met and (last_event_detected is None or last_event_detected != event_code):
-                df.at[idx, 'Event'] = event_code
-                last_event_detected = event_code
-                break
-        
+
+        # Find the first row index where the condition is met
+        first_met_index = condition_met.idxmax()
+
+        # Assign the event number and increment the counter
+        if condition_met[first_met_index]:
+            df.at[first_met_index, 'Event'] = event_counter
+            event_counter += 1
+
     return df
 
 
