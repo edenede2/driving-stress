@@ -619,10 +619,10 @@ def main():
                     modified_values = []
                     for i, value in enumerate(current_values):
                         new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
-                        try:
-                            modified_values.append(float(new_value))
-                        except ValueError:
-                            st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
+                        # try:
+                        #     modified_values.append(float(new_value))
+                        # except ValueError:
+                        #     st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
                     
                     # Update HIGHLIGHT_VALUES when the button is pressed
                     if st.button("Accept Changes"):
