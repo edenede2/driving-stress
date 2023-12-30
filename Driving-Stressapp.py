@@ -9,11 +9,8 @@ from openpyxl.styles import PatternFill, Font, Color, Alignment
 from openpyxl.comments import Comment
 import plotly.express as px
 
-HIGHLIGHT_VALUES = {
-    'A': [1592, 2923, 3082, 3500, 3940, 4705, 5053, 4430, 6580],
-    'B': [1032, 1980, 2661, 3250, 4332, 5560, 5845, 5945, 6487, 7850],
-    'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
-}
+HIGHLIGHT_VALUES = {}
+
 
 def read_and_parse_events_config(file_path):
     with open(file_path, 'r') as file:
@@ -22,19 +19,28 @@ def read_and_parse_events_config(file_path):
     lines = content.split('\n')
     events = {}
     eve_triggers = {}
+    events_scenarios = {}
     
     in_events = False
     in_eve_triggers = False
+    in_events_scenarios = False
 
     for line in lines:
         line = line.strip()
         if line == '[Events]':
             in_events = True
             in_eve_triggers = False
+            in_events_scenarios = False
             continue
         elif line == '[EveTrigger]':
             in_events = False
             in_eve_triggers = True
+            in_events_scenarios = False
+            continue
+        elif line == '[EventsScenarios]':
+            in_events = False
+            in_eve_triggers = False
+            in_events_scenarios = True
             continue
 
         if in_events and '=' in line:
@@ -43,8 +49,13 @@ def read_and_parse_events_config(file_path):
         elif in_eve_triggers and '=' in line:
             key, value = line.split('=', 1)
             eve_triggers[key.strip()] = value.strip()
+        elif in_events_scenarios and '=' in line:
+            key, value = line.split('=', 1)
+            events_scenarios[key.strip()] = value.strip().split(',')
 
-    return events, eve_triggers
+    return events, eve_triggers, events_scenarios
+
+
     
 def process_raw_file_for_streamlit(uploaded_file, original_file_name):
     file_content = uploaded_file
@@ -214,26 +225,29 @@ def determine_header(file_content):
     else:
         raise ValueError("Unrecognized scenario in file.")
 
+def determine_scenario(file_content):
+    lines = file_content.split('\n')
+    fifth_line = lines[4].strip()
+    if "Scenario1" in fifth_line:
+        return "A"
+    elif "Senario2" in fifth_line:
+        return "B"
+    elif "Scenario3" in fifth_line:
+        return "C"
+    return None
+
 # Construct and populate the dataframe
-def construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, eve_triggers):
+def construct_dataframe_optimized_v2_refined(file_content, original_file_name, relevant_eve_triggers, scenario):
+    structured_data = extract_structured_data_v6(file_content)
     header_df = determine_header(file_content)
-    
+
+    # Extract participant number and order from file name
     participant_number, order = original_file_name.replace(".txt", "").split('_')
     participant_number = str(participant_number)
     order = int(order)
+
     
-    lines = file_content.split('\n')
-    fifth_line = lines[4].strip()
-   
-    if "Scenario1" in fifth_line:
-        scenario = "A"
-    elif "Senario2" in fifth_line:
-        scenario = "B"
-    elif "Scenario3" in fifth_line:
-        scenario = "C"
-    else:
-        scenario = None
-    
+    # Construct rows based on structured data
     rows = []
     for data_row in structured_data:
         values = data_row.split()
@@ -262,29 +276,44 @@ def construct_dataframe_optimized_v2_refined(file_content, structured_data, orig
             else:
                 row_data[col] = None
         rows.append(row_data)
-    
-    df = pd.DataFrame(rows, columns=header_df.columns)
-    df = update_event_detection(df, eve_triggers)
 
-    for highlight_value in HIGHLIGHT_VALUES.get(scenario, []):
-        closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
-        df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
-    
-    df['Event'] = df['Event'].rank(method='first').fillna(0).astype(int)
-    df['Event'] = df['Event'].replace(0, np.nan)
-    
+    df = pd.DataFrame(rows, columns=header_df.columns)
+    df = update_event_detection(df, relevant_eve_triggers)
+
+    # Populate HIGHLIGHT_VALUES with detected events' distances
+    HIGHLIGHT_VALUES[scenario] = {event: df[df['Event'] == event]['Distm'].iloc[0] 
+                                  for event in df['Event'].dropna().unique()}
+
+
     return df
 
 def update_event_detection(df, eve_triggers):
-    # This function updates the DataFrame by detecting events based on new triggers from eve_triggers.
+    # Initialize the last detected event to None
+    last_event_detected = None
+    
+    # Iterate through each event trigger condition
     for event_code, condition in eve_triggers.items():
         column, operation, value = parse_condition(condition)
+        # Ensure the column for condition is in numeric format
+        df[column] = pd.to_numeric(df[column], errors='coerce')
+        
+        # Detect event based on condition and ensure it's the first occurrence since the last event
         if operation == '==':
-            df.loc[df[column] == float(value), 'Event'] = event_code
+            condition_met = df[column] == float(value)
         elif operation == '>':
-            df.loc[df[column] > float(value), 'Event'] = event_code
+            condition_met = df[column] > float(value)
         elif operation == '<':
-            df.loc[df[column] < float(value), 'Event'] = event_code
+            condition_met = df[column] < float(value)
+        else:
+            continue  # Skip if operation is not recognized
+        
+        # Apply condition and ensure only the first occurrence is marked
+        for idx, met in condition_met.items():
+            if met and (last_event_detected is None or last_event_detected != event_code):
+                df.at[idx, 'Event'] = event_code
+                last_event_detected = event_code
+                break
+        
     return df
 
 
@@ -500,6 +529,13 @@ def show_event_analysis_with_scatter(df):
     st.write(f"Participant {participant}_{order} changed the value of BrakAcce by {changes['BrakAcce']:.2f} points, ThrAcce by {changes['ThrAcce']:.2f} points, and WheeleAng by {changes['WheeleAng']:.2f} points.")
     st.write(f"The time difference is {changes['TimeDifference']} seconds and the distance difference is {changes['DistmDifference']} meters.")
 
+def filter_triggers_for_scenario(eve_triggers, events_scenarios, scenario):
+    relevant_event_numbers = [str(num) for num in events_scenarios[scenario]]
+    relevant_eve_triggers = {}
+    for key, value in eve_triggers.items():
+        if key in relevant_event_numbers:
+            relevant_eve_triggers[key] = value
+    return relevant_eve_triggers
 
 # Streamlit app
 def main():
@@ -511,31 +547,64 @@ def main():
 
     # Common file upload for both Home and Event Analysis
     uploaded_file = st.file_uploader("Choose a file")
-    
-    events, eve_triggers = read_and_parse_events_config('events_config.txt')
+
+    config_path = 'events_config.txt'
+
+    events, eve_triggers, events_scenarios = read_and_parse_events_config(config_path)
+
+
+
+    # try:
+    #     # Read the content of the file
+    #     with open(file_path, 'r') as file:
+    #         file_content = file.read()
+
+    # if uploaded_file is not None:
+    #     # Capture the original file name
+    #     file_content = uploaded_file.getvalue().decode('utf-8')
+    #     original_file_name = uploaded_file.name
+    #     file_name = original_file_name.split(".")[0]
+
+    #     # # Save the uploaded file to a temporary location
+    #     # with open("temp.txt", "wb") as f:
+    #     #     f.write(uploaded_file.getvalue())
 
     if uploaded_file is not None:
-        # Capture the original file name
-        file_content = uploaded_file.getvalue().decode('utf-8')
+        # Read the content of the file
+        file_content = uploaded_file.read()
 
         original_file_name = uploaded_file.name
         file_name = original_file_name.split(".")[0]
-
-        # # Save the uploaded file to a temporary location
-        # with open("temp.txt", "wb") as f:
-        #     f.write(uploaded_file.getvalue())
-
         try:
-            # Process the uploaded file
-            df_sorted = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, eve_triggers)
+            scenario = determine_scenario(file_content)
+            # Get triggers relevant for the determined scenario
+            relevant_eve_triggers = filter_triggers_for_scenario(eve_triggers, events_scenarios, scenario)
+            df_sorted = construct_dataframe_optimized_v2_refined(file_content, original_file_name, relevant_eve_triggers, scenario)
 
             if choice == "Home":
                 # Display the processed data
                 st.dataframe(df_sorted)
                 st.subheader("Edit Event Highlight Values")
                 scenario = df_sorted['Scenario'].iloc[0]
-                current_values = HIGHLIGHT_VALUES.get(scenario, [])
-                
+                relevant_events = events_scenarios.get(scenario, [])
+            
+            # Initialize current_values with "UNTRIGGERED"
+                current_values = {event: "UNTRIGGERED" for event in relevant_events}
+
+                # Update current_values with Distm values for detected events
+                for event in relevant_events:
+                    if event in df_sorted['Event'].unique():
+                        first_occurrence = df_sorted[df_sorted['Event'] == event].iloc[0]
+                        current_values[event] = first_occurrence['Distm']
+
+                # Display a text box for each event
+                for event, value in current_values.items():
+                    new_value = st.text_input(f"Event {event} Distm value", value=str(value))
+                    try:
+                        current_values[event] = float(new_value) if new_value != "UNTRIGGERED" else "UNTRIGGERED"
+                    except ValueError:
+                        st.error(f"Invalid input for Event {event}. Please enter a numeric value or 'UNTRIGGERED'.")
+                    
                 # Display a text box for each event
                 modified_values = []
                 for i, value in enumerate(current_values):
@@ -547,10 +616,15 @@ def main():
                 
                 # Update HIGHLIGHT_VALUES when the button is pressed
                 if st.button("Accept Changes"):
-                    HIGHLIGHT_VALUES[scenario] = modified_values
-                    df_sorted = process_raw_file_for_streamlit(file_content, original_file_name)
-                    st.markdown(':green[The events distance values been update !]')
-                    # st.dataframe(df_sorted)
+                    # Update the distances for the current scenario's events
+                    for i, value in enumerate(modified_values):
+                        if value.upper() != "UNTRIGGERED":
+                            HIGHLIGHT_VALUES[scenario][i + 1] = float(value)  # Event numbers start from 1
+                        else:
+                            HIGHLIGHT_VALUES[scenario][i + 1] = "UNTRIGGERED"
+    
+                    df_sorted = construct_dataframe_optimized_v2_refined(file_content, original_file_name, eve_triggers)
+                    st.markdown(':green_heart: [The events distance values have been updated!]')
 
                 scenario = df_sorted['Scenario'].iloc[0]
 
@@ -571,5 +645,6 @@ def main():
 
         except Exception as e:
             st.write("An error occurred:", str(e))
+        
 if __name__ == "__main__":
     main()
