@@ -291,27 +291,23 @@ def update_event_detection(df, relevant_eve_triggers):
     # Initialize a counter for event numbering
     event_counter = 1
 
-    # Iterate through each event trigger condition
     for event_code, condition in relevant_eve_triggers.items():
         column, operation, value = parse_condition(condition)
-        # Ensure the column for condition is in numeric format
+        # Convert the column to numeric format
         df[column] = pd.to_numeric(df[column], errors='coerce')
 
-        # Detect event based on condition
+        # Apply condition
         if operation == '==':
             condition_met = df[column] == float(value)
         elif operation == '>':
             condition_met = df[column] > float(value)
         elif operation == '<':
             condition_met = df[column] < float(value)
-        else:
-            continue  # Skip if operation is not recognized
+        
+        # Find the first index where the condition is met
+        first_met_index = condition_met.idxmax() if condition_met.any() else None
 
-        # Find the first row index where the condition is met
-        first_met_index = condition_met.idxmax()
-
-        # Assign the event number and increment the counter
-        if condition_met[first_met_index]:
+        if first_met_index is not None:
             df.at[first_met_index, 'Event'] = event_counter
             event_counter += 1
 
@@ -576,15 +572,15 @@ def main():
         file_name = original_file_name.split(".")[0]
         try:
             scenario = determine_scenario(file_content)
-            # Get triggers relevant for the determined scenario
             relevant_eve_triggers = filter_triggers_for_scenario(eve_triggers, events_scenarios, scenario)
-            df_sorted = construct_dataframe_optimized_v2_refined(file_content, original_file_name, relevant_eve_triggers, scenario)
+            structured_data = extract_structured_data_v6(file_content)
+            df = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, relevant_eve_triggers)
 
             if choice == "Home":
                 # Display the processed data
-                st.dataframe(df_sorted)
+                st.dataframe(df)
                 st.subheader("Edit Event Highlight Values")
-                scenario = df_sorted['Scenario'].iloc[0]
+                scenario = df['Scenario'].iloc[0]
                 relevant_events = events_scenarios.get(scenario, [])
             
             # Initialize current_values with "UNTRIGGERED"
@@ -592,8 +588,8 @@ def main():
 
                 # Update current_values with Distm values for detected events
                 for event in relevant_events:
-                    if event in df_sorted['Event'].unique():
-                        first_occurrence = df_sorted[df_sorted['Event'] == event].iloc[0]
+                    if event in df['Event'].unique():
+                        first_occurrence = df[df['Event'] == event].iloc[0]
                         current_values[event] = first_occurrence['Distm']
 
                 # Display a text box for each event
@@ -622,17 +618,17 @@ def main():
                         else:
                             HIGHLIGHT_VALUES[scenario][i + 1] = "UNTRIGGERED"
     
-                    df_sorted = construct_dataframe_optimized_v2_refined(file_content, original_file_name, eve_triggers)
+                    df = construct_dataframe_optimized_v2_refined(file_content, original_file_name, eve_triggers)
                     st.markdown(':green_heart: [The events distance values have been updated!]')
 
-                scenario = df_sorted['Scenario'].iloc[0]
+                scenario = df['Scenario'].iloc[0]
 
                 # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
+                xlsx_path = save_as_xlsx_with_highlight_refined(df, scenario, file_name)
 
                 # Offer option to download the sorted data
                 if st.button("Download Sorted Data as XLSX"):
-                    xlsx_path = save_as_xlsx_with_highlight_refined(df_sorted, scenario, file_name)
+                    xlsx_path = save_as_xlsx_with_highlight_refined(df, scenario, file_name)
                     
                     with open(xlsx_path, "rb") as f:
                         b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
@@ -640,7 +636,7 @@ def main():
                         st.markdown(href, unsafe_allow_html=True)
 
             elif choice == "Event Analysis":
-                show_event_analysis_with_scatter(df_sorted)
+                show_event_analysis_with_scatter(df)
 
         except Exception as e:
             st.write("An error occurred:", str(e))
