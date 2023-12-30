@@ -14,6 +14,38 @@ HIGHLIGHT_VALUES = {
     'B': [1032, 1980, 2661, 3250, 4332, 5560, 5845, 5945, 6487, 7850],
     'C': [670, 1300, 2513, 3457, 4107, 4390, 5037, 5358, 6484]
 }
+
+def read_and_parse_events_config(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    lines = content.split('\n')
+    events = {}
+    eve_triggers = {}
+    
+    in_events = False
+    in_eve_triggers = False
+
+    for line in lines:
+        line = line.strip()
+        if line == '[Events]':
+            in_events = True
+            in_eve_triggers = False
+            continue
+        elif line == '[EveTrigger]':
+            in_events = False
+            in_eve_triggers = True
+            continue
+
+        if in_events and '=' in line:
+            key, value = line.split('=', 1)
+            events[key.strip()] = value.strip()
+        elif in_eve_triggers and '=' in line:
+            key, value = line.split('=', 1)
+            eve_triggers[key.strip()] = value.strip()
+
+    return events, eve_triggers
+    
 def process_raw_file_for_streamlit(uploaded_file, original_file_name):
     file_content = uploaded_file
     structured_data = extract_structured_data_v6(file_content)
@@ -183,7 +215,7 @@ def determine_header(file_content):
         raise ValueError("Unrecognized scenario in file.")
 
 # Construct and populate the dataframe
-def construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name):
+def construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, eve_triggers):
     header_df = determine_header(file_content)
     
     participant_number, order = original_file_name.replace(".txt", "").split('_')
@@ -232,7 +264,8 @@ def construct_dataframe_optimized_v2_refined(file_content, structured_data, orig
         rows.append(row_data)
     
     df = pd.DataFrame(rows, columns=header_df.columns)
-    df['Distm'] = pd.to_numeric(df['Distm'], errors='coerce')
+    df = update_event_detection(df, eve_triggers)
+
     for highlight_value in HIGHLIGHT_VALUES.get(scenario, []):
         closest_row_idx = (df['Distm'] - highlight_value).abs().idxmin()
         df.at[closest_row_idx, 'Event'] = df.at[closest_row_idx, 'Distm']
@@ -242,8 +275,28 @@ def construct_dataframe_optimized_v2_refined(file_content, structured_data, orig
     
     return df
 
+def update_event_detection(df, eve_triggers):
+    # This function updates the DataFrame by detecting events based on new triggers from eve_triggers.
+    for event_code, condition in eve_triggers.items():
+        column, operation, value = parse_condition(condition)
+        if operation == '==':
+            df.loc[df[column] == float(value), 'Event'] = event_code
+        elif operation == '>':
+            df.loc[df[column] > float(value), 'Event'] = event_code
+        elif operation == '<':
+            df.loc[df[column] < float(value), 'Event'] = event_code
+    return df
 
-def get_event_description(scenario, event_number):
+
+def parse_condition(condition):
+    # Helper function to parse the condition string into column, operation, and value.
+    parts = condition.split()
+    column = parts[0]
+    operation = parts[1]
+    value = parts[2]
+    return column, operation, value
+
+def get_event_description(event_number, events):
     """
     Get the description of the event based on the scenario and event number.
     """
@@ -283,7 +336,7 @@ def get_event_description(scenario, event_number):
             9: "9. Last traffic light in town - turns red"
         }
     }
-    return descriptions.get(scenario, {}).get(event_number, "Unknown Event")
+    return events.get(str(event_number), "Unknown Event")
 
 
 def calculate_changes(df, event_row_index, offset):
@@ -458,6 +511,8 @@ def main():
 
     # Common file upload for both Home and Event Analysis
     uploaded_file = st.file_uploader("Choose a file")
+    
+    events, eve_triggers = read_and_parse_events_config('events_config.txt')
 
     if uploaded_file is not None:
         # Capture the original file name
@@ -472,7 +527,7 @@ def main():
 
         try:
             # Process the uploaded file
-            df_sorted = process_raw_file_for_streamlit(file_content, original_file_name)
+            df_sorted = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, eve_triggers)
 
             if choice == "Home":
                 # Display the processed data
