@@ -569,77 +569,83 @@ def main():
         # Read the content of the file
         file_content = uploaded_file.getvalue().decode('utf-8')
         original_file_name = uploaded_file.name
-        file_name = original_file_name.split(".")[0]
-        try:
-            scenario = determine_scenario(file_content)
-            relevant_eve_triggers = filter_triggers_for_scenario(eve_triggers, events_scenarios, scenario)
-            structured_data = extract_structured_data_v6(file_content)
-            df = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, relevant_eve_triggers)
+        if isinstance(original_file_name, str):  # Ensure it's a string
+            file_name = original_file_name.split(".")[0]
 
-            if choice == "Home":
-                # Display the processed data
-                st.dataframe(df)
-                st.subheader("Edit Event Highlight Values")
-                scenario = df['Scenario'].iloc[0]
-                relevant_events = events_scenarios.get(scenario, [])
-            
-            # Initialize current_values with "UNTRIGGERED"
-                current_values = {event: "UNTRIGGERED" for event in relevant_events}
+            try:
+                scenario = determine_scenario(file_content)
+                relevant_eve_triggers = filter_triggers_for_scenario(eve_triggers, events_scenarios, scenario)
+                structured_data = extract_structured_data_v6(file_content)
+                df = construct_dataframe_optimized_v2_refined(file_content, structured_data, original_file_name, relevant_eve_triggers)
 
-                # Update current_values with Distm values for detected events
-                for event in relevant_events:
-                    if event in df['Event'].unique():
-                        first_occurrence = df[df['Event'] == event].iloc[0]
-                        current_values[event] = first_occurrence['Distm']
-
-                # Display a text box for each event
-                for event, value in current_values.items():
-                    new_value = st.text_input(f"Event {event} Distm value", value=str(value))
-                    try:
-                        current_values[event] = float(new_value) if new_value != "UNTRIGGERED" else "UNTRIGGERED"
-                    except ValueError:
-                        st.error(f"Invalid input for Event {event}. Please enter a numeric value or 'UNTRIGGERED'.")
-                    
-                # Display a text box for each event
-                modified_values = []
-                for i, value in enumerate(current_values):
-                    new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
-                    try:
-                        modified_values.append(float(new_value))
-                    except ValueError:
-                        st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
-                
-                # Update HIGHLIGHT_VALUES when the button is pressed
-                if st.button("Accept Changes"):
-                    # Update the distances for the current scenario's events
-                    for i, value in enumerate(modified_values):
-                        if value.upper() != "UNTRIGGERED":
-                            HIGHLIGHT_VALUES[scenario][i + 1] = float(value)  # Event numbers start from 1
-                        else:
-                            HIGHLIGHT_VALUES[scenario][i + 1] = "UNTRIGGERED"
     
-                    df = construct_dataframe_optimized_v2_refined(file_content, original_file_name, eve_triggers)
-                    st.markdown(':green_heart: [The events distance values have been updated!]')
-
-                scenario = df['Scenario'].iloc[0]
-
-                # Save the processed data as an XLSX file with highlighting
-                xlsx_path = save_as_xlsx_with_highlight_refined(df, scenario, file_name)
-
-                # Offer option to download the sorted data
-                if st.button("Download Sorted Data as XLSX"):
-                    xlsx_path = save_as_xlsx_with_highlight_refined(df, scenario, file_name)
+                if choice == "Home":
+                    # Display the processed data
+                    st.dataframe(df)
+                    st.subheader("Edit Event Highlight Values")
+                    scenario = df['Scenario'].iloc[0]
+                    relevant_events = events_scenarios.get(scenario, [])
+                
+                # Initialize current_values with "UNTRIGGERED"
+                    current_values = {event: "UNTRIGGERED" for event in relevant_events}
+    
+                    # Update current_values with Distm values for detected events
+                    for event in relevant_events:
+                        if event in df['Event'].unique():
+                            first_occurrence = df[df['Event'] == event].iloc[0]
+                            current_values[event] = first_occurrence['Distm']
+    
+                    # Display a text box for each event
+                    for event, value in current_values.items():
+                        new_value = st.text_input(f"Event {event} Distm value", value=str(value))
+                        try:
+                            current_values[event] = float(new_value) if new_value != "UNTRIGGERED" else "UNTRIGGERED"
+                        except ValueError:
+                            st.error(f"Invalid input for Event {event}. Please enter a numeric value or 'UNTRIGGERED'.")
+                        
+                    # Display a text box for each event
+                    modified_values = []
+                    for i, value in enumerate(current_values):
+                        new_value = st.text_input(f"Event {i+1} Distm value", value=str(value))
+                        try:
+                            modified_values.append(float(new_value))
+                        except ValueError:
+                            st.error(f"Invalid input for Event {i+1}. Please enter a numeric value.")
                     
-                    with open(xlsx_path, "rb") as f:
-                        b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
-                        href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
-                        st.markdown(href, unsafe_allow_html=True)
+                    # Update HIGHLIGHT_VALUES when the button is pressed
+                    if st.button("Accept Changes"):
+                        # Update the distances for the current scenario's events
+                        for i, value in enumerate(modified_values):
+                            if value.upper() != "UNTRIGGERED":
+                                HIGHLIGHT_VALUES[scenario][i + 1] = float(value)  # Event numbers start from 1
+                            else:
+                                HIGHLIGHT_VALUES[scenario][i + 1] = "UNTRIGGERED"
+        
+                        df = construct_dataframe_optimized_v2_refined(file_content, original_file_name, eve_triggers)
+                        st.markdown(':green_heart: [The events distance values have been updated!]')
+    
+                    scenario = df['Scenario'].iloc[0]
+    
+                    # Save the processed data as an XLSX file with highlighting
+                    xlsx_path = save_as_xlsx_with_highlight_refined(df, scenario, file_name)
+    
+                    # Offer option to download the sorted data
+                    if st.button("Download Sorted Data as XLSX"):
+                        xlsx_path = save_as_xlsx_with_highlight_refined(df, scenario, file_name)
+                        
+                        with open(xlsx_path, "rb") as f:
+                            b64 = base64.b64encode(f.read()).decode()  # Convert bytes to string
+                            href = f'<a href="data:file/xlsx;base64,{b64}" download="{xlsx_path}">Download XLSX File</a>'
+                            st.markdown(href, unsafe_allow_html=True)
+    
+                elif choice == "Event Analysis":
+                    show_event_analysis_with_scatter(df)
 
-            elif choice == "Event Analysis":
-                show_event_analysis_with_scatter(df)
-
-        except Exception as e:
-            st.write("An error occurred:", str(e))
+            except Exception as e:
+                st.write("An error occurred:", str(e))
+        else:
+            st.error("Invalid file name format.")
+            
         
 if __name__ == "__main__":
     main()
